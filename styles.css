@@ -1,0 +1,114 @@
+/* ============================================================
+   Image Size Presets
+   The caps themselves live here; each pane's values are written
+   onto its container element as --isp-width / --isp-height.
+   ============================================================ */
+
+.markdown-preview-view img,
+.markdown-reading-view img,
+.markdown-rendered img,
+.markdown-source-view.is-live-preview img {
+	max-width: min(100%, var(--isp-width, 100%));
+	max-height: var(--isp-height, none);
+}
+
+/* ---------------- picker modal ---------------- */
+
+.isp-modal .isp-hint {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	margin: 0 0 14px;
+	line-height: 1.5;
+}
+
+.isp-modal .isp-warn {
+	color: var(--text-warning);
+	font-size: var(--font-ui-small);
+	margin: 0 0 12px;
+}
+
+.isp-scopes {
+	display: flex;
+	gap: 8px;
+	margin-bottom: 16px;
+}
+
+.isp-scope {
+	flex: 1 1 0;
+	padding: 8px 6px;
+	border-radius: var(--radius-m);
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-primary);
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+	cursor: pointer;
+	box-shadow: none;
+	height: auto;
+}
+
+.isp-scope:hover {
+	background: var(--background-modifier-hover);
+}
+
+.isp-scope.is-active {
+	background: var(--interactive-accent);
+	border-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+.isp-grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 8px;
+}
+
+.isp-chip {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 3px;
+	padding: 12px 6px;
+	border-radius: var(--radius-m);
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-primary);
+	cursor: pointer;
+	box-shadow: none;
+	height: auto;
+}
+
+.isp-chip:hover {
+	background: var(--background-modifier-hover);
+}
+
+.isp-chip.is-active {
+	border-color: var(--interactive-accent);
+	box-shadow: inset 0 0 0 1px var(--interactive-accent);
+}
+
+.isp-chip-label {
+	font-size: var(--font-ui-medium);
+	font-weight: 600;
+	color: var(--text-normal);
+	line-height: 1.2;
+}
+
+.isp-chip-value {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	line-height: 1.2;
+}
+
+.isp-status {
+	margin-top: 16px;
+	padding-top: 12px;
+	border-top: 1px solid var(--background-modifier-border);
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+}
+
+/* ---------------- settings tab ---------------- */
+
+.isp-settings .isp-hint {
+	margin-bottom: 18px;
+}

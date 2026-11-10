@@ -1,0 +1,15 @@
+# build output
+main.js
+test/.build/
+
+# dependencies
+node_modules/
+
+# local plugin state
+data.json
+
+# editors / OS
+.DS_Store
+.idea/
+.vscode/
+*.log
