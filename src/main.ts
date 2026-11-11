@@ -1,6 +1,8 @@
 import { MarkdownView, Plugin, type TFile } from 'obsidian';
 import { t } from './i18n';
 import { SizePickerModal } from './modal';
+import { computePaneState, paneStateKey } from './pane-state';
+import type { PaneState } from './pane-state';
 import {
 	FM_ALIGN_KEY,
 	FM_KEY,
@@ -12,17 +14,25 @@ import {
 	normalizeLayout,
 	normalizeWidth,
 	resolveAlign,
-	resolveLayout,
 	resolveWidth,
 } from './resolve';
 import { ALIGNS, DEFAULT_SETTINGS, SETTINGS_SCHEMA } from './settings';
 import { ImageSizeSettingTab } from './setting-tab';
 import type { Align, Layout, PluginSettings, Scope, ScopeResolution } from './types';
 
+/** How long our own frontmatter write may take to reach the metadata cache. */
+const PENDING_MS = 500;
+
 export default class ImageSizePresetsPlugin extends Plugin {
 	settings!: PluginSettings;
 
 	private refreshTimer: number | null = null;
+
+	/** Last state applied to each pane, so unchanged panes are left alone. */
+	private lastState = new WeakMap<HTMLElement, string>();
+
+	/** Panes we painted ourselves and must not revert until the cache agrees. */
+	private pendingUntil = new Map<string, number>();
 
 	async onload(): Promise<void> {
 		await this.loadSettings();
@@ -112,7 +122,7 @@ export default class ImageSizePresetsPlugin extends Plugin {
 
 	/** Writes the caps, the override flag, the layout and the alignment onto each pane. */
 	refresh(): void {
-		const height = this.heightValue();
+		const now = Date.now();
 		for (const leaf of this.app.workspace.getLeavesOfType('markdown')) {
 			const view = leaf.view;
 			if (!(view instanceof MarkdownView)) continue;
@@ -123,33 +133,45 @@ export default class ImageSizePresetsPlugin extends Plugin {
 				continue;
 			}
 
-			const cache = this.app.metadataCache.getFileCache(file);
-			const folderPath = folderPathOf(file);
-			const frontmatter = cache?.frontmatter ?? null;
-
-			const resolved = resolveWidth({ frontmatter, folderPath, settings: this.settings });
-			const align = resolveAlign({ frontmatter, folderPath, settings: this.settings });
-			const layout = resolveLayout({ frontmatter, folderPath, settings: this.settings });
-
-			el.style.setProperty('--isp-width', resolved.width > 0 ? `${resolved.width}px` : '100%');
-			el.style.setProperty('--isp-height', height);
-
-			el.classList.toggle('isp-force', this.settings.overrideInlineWidth);
-			this.applyLayoutClass(el, layout);
-			// Alignment forces block display, which would fight a multi-column
-			// layout, so it only applies while the layout is "stacked".
-			for (const option of ALIGNS) {
-				el.classList.toggle(`isp-align-${option}`, layout === 'stack' && align === option);
+			// Our own frontmatter write has not reached the cache yet. The
+			// optimistic paint is already right, so leave the pane alone
+			// rather than reverting it to the value we just replaced.
+			const pendingUntil = this.pendingUntil.get(file.path);
+			if (pendingUntil !== undefined) {
+				if (now < pendingUntil) continue;
+				this.pendingUntil.delete(file.path);
 			}
+
+			const cache = this.app.metadataCache.getFileCache(file);
+			const state = computePaneState({
+				frontmatter: cache?.frontmatter ?? null,
+				cacheReady: cache !== null,
+				folderPath: folderPathOf(file),
+				settings: this.settings,
+			});
+			// null means the metadata cache is mid-rebuild: touching the pane
+			// now would resize images and force a re-decode.
+			if (!state) continue;
+
+			const key = paneStateKey(state);
+			if (this.lastState.get(el) === key) continue;
+
+			this.applyPaneState(el, state);
+			this.lastState.set(el, key);
 		}
 	}
 
-	private applyLayoutClass(el: HTMLElement, layout: Layout): void {
-		el.classList.toggle('isp-layout-cols2', layout === 'cols2');
-		el.classList.toggle('isp-layout-cols3', layout === 'cols3');
+	private applyPaneState(el: HTMLElement, state: PaneState): void {
+		el.style.setProperty('--isp-width', state.width);
+		el.style.setProperty('--isp-height', state.height);
+		el.classList.toggle('isp-force', state.force);
+		el.classList.toggle('isp-layout-cols2', state.layout === 'cols2');
+		el.classList.toggle('isp-layout-cols3', state.layout === 'cols3');
+		for (const option of ALIGNS) el.classList.toggle(`isp-align-${option}`, state.align === option);
 	}
 
 	private clearPane(el: HTMLElement): void {
+		this.lastState.delete(el);
 		el.style.removeProperty('--isp-width');
 		el.style.removeProperty('--isp-height');
 		el.classList.remove('isp-force');
@@ -233,8 +255,9 @@ export default class ImageSizePresetsPlugin extends Plugin {
 		});
 		// Paint immediately: the metadata cache may not reflect the new
 		// frontmatter yet, and waiting for it makes the picker feel dead.
+		this.pendingUntil.set(file.path, Date.now() + PENDING_MS);
 		this.paintWidth(file.path, width);
-		this.scheduleRefresh(150);
+		this.scheduleRefresh(PENDING_MS + 50);
 	}
 
 	async setNoteAlign(file: TFile, align: Align): Promise<void> {
@@ -243,8 +266,9 @@ export default class ImageSizePresetsPlugin extends Plugin {
 			if (align === 'inherit') delete fm[FM_ALIGN_KEY];
 			else fm[FM_ALIGN_KEY] = align;
 		});
+		this.pendingUntil.set(file.path, Date.now() + PENDING_MS);
 		this.paintAlign(file.path, align);
-		this.scheduleRefresh(150);
+		this.scheduleRefresh(PENDING_MS + 50);
 	}
 
 	async setNoteLayout(file: TFile, layout: Layout): Promise<void> {
@@ -253,8 +277,9 @@ export default class ImageSizePresetsPlugin extends Plugin {
 			if (layout === 'stack') delete fm[FM_LAYOUT_KEY];
 			else fm[FM_LAYOUT_KEY] = layout === 'cols2' ? 2 : 3;
 		});
+		this.pendingUntil.set(file.path, Date.now() + PENDING_MS);
 		this.paintLayout(file.path, layout);
-		this.scheduleRefresh(150);
+		this.scheduleRefresh(PENDING_MS + 50);
 	}
 
 	/** The view currently showing `path`, if any. */
@@ -283,20 +308,25 @@ export default class ImageSizePresetsPlugin extends Plugin {
 
 	private paintWidth(path: string, width: number): void {
 		const el = this.paneFor(path);
-		if (el) el.style.setProperty('--isp-width', width > 0 ? `${width}px` : '100%');
+		if (!el) return;
+		el.style.setProperty('--isp-width', width > 0 ? `${width}px` : '100%');
+		// The DOM no longer matches the cached key; let the next refresh correct it.
+		this.lastState.delete(el);
 	}
 
 	private paintAlign(path: string, align: Align): void {
 		const el = this.paneFor(path);
 		if (!el) return;
 		for (const option of ALIGNS) el.classList.toggle(`isp-align-${option}`, align === option);
+		this.lastState.delete(el);
 	}
 
 	private paintLayout(path: string, layout: Layout): void {
 		const view = this.viewFor(path);
 		if (!view) return;
 		const el = view.containerEl;
-		this.applyLayoutClass(el, layout);
+		el.classList.toggle('isp-layout-cols2', layout === 'cols2');
+		el.classList.toggle('isp-layout-cols3', layout === 'cols3');
 		// Switching layout must not leave a stale alignment behind for the
 		// ~150ms until the scheduled reconcile: block display would fight the
 		// columns, and a missing alignment would flash a single row.
@@ -304,6 +334,7 @@ export default class ImageSizePresetsPlugin extends Plugin {
 		for (const option of ALIGNS) {
 			el.classList.toggle(`isp-align-${option}`, layout === 'stack' && align === option);
 		}
+		this.lastState.delete(el);
 	}
 
 	async setFolderWidth(folderPath: string, width: number): Promise<void> {
@@ -355,8 +386,4 @@ export default class ImageSizePresetsPlugin extends Plugin {
 		this.scheduleRefresh(0);
 	}
 
-	private heightValue(): string {
-		const h = Number(this.settings.defaultHeight);
-		return Number.isFinite(h) && h > 0 ? `${h}px` : 'none';
-	}
 }

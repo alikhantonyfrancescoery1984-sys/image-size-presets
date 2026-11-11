@@ -86,6 +86,11 @@ On every file open, layout change and metadata change the plugin resolves width,
 
 Clicking a preset paints the new value immediately and reconciles a moment later, so the picker never feels laggy while the metadata cache catches up.
 
+Two details exist to stop images from flickering:
+
+- While Obsidian is rebuilding its metadata cache, `getFileCache()` returns `null`. That is treated as "not ready yet" and the pane is left alone — falling back to the default width there would resize every image and force a re-decode.
+- The computed state for a pane is compared against the last applied one, so an unchanged note is never touched. Obsidian fires a metadata-changed event on every keystroke; without the comparison a 60-image note would re-layout constantly.
+
 ## Development
 
 ```bash

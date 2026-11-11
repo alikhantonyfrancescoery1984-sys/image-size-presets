@@ -1,7 +1,7 @@
 {
 	"id": "image-size-presets",
 	"name": "Image Size Presets",
-	"version": "1.2.0",
+	"version": "1.2.1",
 	"minAppVersion": "1.5.1",
 	"description": "Set default image sizes per note, folder, or vault with one click.",
 	"author": "auryn",

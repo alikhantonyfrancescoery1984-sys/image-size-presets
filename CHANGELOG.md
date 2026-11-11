@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.2.1
+
+### Fixed
+
+- **Images flickered: gone for a moment, then back.** When Obsidian rebuilt its
+  metadata cache, `getFileCache()` returned `null` and the plugin treated that
+  as "this note has no settings", falling back to the default width. A 240px
+  note jumped to 560px, the browser re-decoded every image, and the boxes went
+  blank until the bitmaps returned. The pane is now left untouched while the
+  cache is unready, and the state is re-read once it is.
+- **Redundant DOM writes on every keystroke.** Each `metadataCache` event
+  rewrote the custom properties and seven classes on every open pane. The
+  computed state is now compared first and written only when it actually
+  differs.
+- **A stale cache could undo a fresh choice.** After writing frontmatter the
+  pane is painted immediately; a refresh inside the next 500ms is now skipped
+  so the optimistic value cannot be reverted by the not-yet-updated cache.
+
 ## 1.2.0
 
 ### Added
