@@ -1,4 +1,4 @@
-import type { Align, Scope, SizeKey } from './types';
+import type { Align, Layout, Scope, SizeKey } from './types';
 
 export interface Strings {
 	ribbon: string;
@@ -13,6 +13,7 @@ export interface Strings {
 	noLimit: string;
 	status: (size: string, source: string) => string;
 	forceHint: string;
+	layoutNote: string;
 	sourceNote: string;
 	sourceDefault: string;
 	sourceUnset: string;
@@ -21,6 +22,10 @@ export interface Strings {
 	applied: (scope: string, size: string) => string;
 	alignTitle: string;
 	align: Record<Align, string>;
+	layoutTitle: string;
+	layout: Record<Layout, string>;
+	defaultLayoutLabel: string;
+	defaultLayoutDesc: string;
 	settingsTitle: string;
 	settingsDesc: string;
 	defaultWidth: string;
@@ -51,6 +56,7 @@ const zh: Strings = {
 	noLimit: '不限制',
 	status: (size, source) => `现在实际显示：${size}（${source}）`,
 	forceHint: '已统一宽度：图片自带的 |宽度 会被忽略',
+	layoutNote: '并排模式：同一行图片平分宽度，选定的大小不再精确',
 	sourceNote: '来自本笔记',
 	sourceDefault: '来自默认设置',
 	sourceUnset: '这一层还没单独设置',
@@ -59,6 +65,10 @@ const zh: Strings = {
 	applied: (scope, size) => `图片大小：${scope} → ${size}`,
 	alignTitle: '对齐方式',
 	align: { inherit: '跟随默认', left: '左', center: '居中', right: '右' },
+	layoutTitle: '排列',
+	layout: { stack: '竖排', cols2: '2 张一排', cols3: '3 张一排' },
+	defaultLayoutLabel: '默认排列',
+	defaultLayoutDesc: '兜底排列方式。2/3 张一排只对写在同一行的多张图生效，会平分该行宽度。',
 	settingsTitle: '图片大小',
 	settingsDesc: '平时不用来这里：点左侧边栏的「图片大小」按钮就行。这里配的是所有笔记的兜底值。',
 	defaultWidth: '默认最大宽度',
@@ -89,6 +99,7 @@ const en: Strings = {
 	noLimit: 'No limit',
 	status: (size, source) => `Currently showing: ${size} (${source})`,
 	forceHint: 'Width unified: inline |width values are ignored',
+	layoutNote: 'Multi-column: images share the row width, so the exact size no longer applies',
 	sourceNote: 'from this note',
 	sourceDefault: 'from the default setting',
 	sourceUnset: 'not set on this layer',
@@ -97,6 +108,10 @@ const en: Strings = {
 	applied: (scope, size) => `Image size: ${scope} → ${size}`,
 	alignTitle: 'Alignment',
 	align: { inherit: 'Default', left: 'Left', center: 'Center', right: 'Right' },
+	layoutTitle: 'Layout',
+	layout: { stack: 'Stacked', cols2: '2 per row', cols3: '3 per row' },
+	defaultLayoutLabel: 'Default layout',
+	defaultLayoutDesc: 'Fallback layout. Two or three per row only affects images placed on the same line, which then share the row width.',
 	settingsTitle: 'Image size',
 	settingsDesc: 'You normally do not need this tab: click the image icon in the ribbon. These values are the fallback for every note.',
 	defaultWidth: 'Default maximum width',

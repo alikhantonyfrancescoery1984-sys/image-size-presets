@@ -1,5 +1,5 @@
 import { FALLBACK_WIDTH } from './resolve';
-import type { Align, PluginSettings, Scope, SizeOption } from './types';
+import type { Align, Layout, PluginSettings, Scope, SizeOption } from './types';
 
 /** Bumped when stored settings need a migration. */
 export const SETTINGS_SCHEMA = 2;
@@ -8,6 +8,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	defaultWidth: FALLBACK_WIDTH,
 	defaultHeight: 0,
 	defaultAlign: 'inherit',
+	defaultLayout: 'stack',
 	overrideInlineWidth: true,
 	folderRules: [],
 	schemaVersion: SETTINGS_SCHEMA,
@@ -29,3 +30,6 @@ export const SCOPES: Scope[] = ['note', 'folder', 'all'];
 export const ALIGNS: Align[] = ['left', 'center', 'right'];
 
 export const ALIGN_OPTIONS: Align[] = ['left', 'center', 'right', 'inherit'];
+
+/** Concrete layouts, in picker order. */
+export const LAYOUTS: Layout[] = ['stack', 'cols2', 'cols3'];

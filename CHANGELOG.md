@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.0
+
+### Added
+
+- **Layout**: stacked / 2 per row / 3 per row, with the same note → folder → vault precedence as size (`image-layout: 2` in frontmatter). Images sharing a line split it evenly, so the right half of the pane stops going to waste.
+- Alignment is hidden while a multi-column layout is active, because `display: block` would undo it.
+
+### Fixed
+
+- Switching layout left a stale alignment behind for the scheduled refresh window, which flashed a stacked block of images before the columns applied (and a single row when switching back).
+- `paintLayout` now reconciles the alignment class immediately instead of waiting for the metadata cache.
+
 ## 1.1.0
 
 The size picker now actually changes the images. Two things were fighting it.

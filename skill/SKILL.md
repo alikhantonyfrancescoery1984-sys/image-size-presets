@@ -40,7 +40,10 @@ test/               resolve.test, render.test (model), css-contract.test
 6. **Static CSS belongs in `styles.css`, not an injected `<style>`.** Obsidian loads plugin CSS into every window; that is what makes pop-outs work.
 7. **After writing frontmatter, paint before refreshing.** `metadataCache` lags the write, so `setNoteWidth`/`setNoteAlign` call `paintWidth`/`paintAlign` for instant feedback and only then schedule a reconcile.
 8. **Bump `SETTINGS_SCHEMA` when defaults change meaningfully** and add a migration in `migrate()`. v1.0.x shipped a 900px height cap that made widths look wrong; schema 2 turns it off for untouched settings.
-9. **`minAppVersion` must match the APIs used.** `Modal.setTitle` needs 1.5.1; `obsidianmd/no-unsupported-api` enforces it.
+9. **Column rules must stay after `.isp-force` in `styles.css`.** Both are `!important` at equal specificity, so source order decides; the CSS contract test asserts the order.
+10. **Multi-column layouts are percentage based, not pixel based.** `width: calc(50% - 11px)` replaces the cap on purpose. Never "fix" that by also applying the pixel cap — it would leave the row half empty again.
+11. **Alignment only applies while stacked.** `display: block` and columns are mutually exclusive; `refresh()` and `paintLayout()` both gate on layout === 'stack'.
+12. **`minAppVersion` must match the APIs used.** `Modal.setTitle` needs 1.5.1; `obsidianmd/no-unsupported-api` enforces it.
 
 ## Why a height cap is dangerous
 
@@ -55,6 +58,8 @@ test/               resolve.test, render.test (model), css-contract.test
 **Add a size preset** — append to `SIZES` in `src/settings.ts` and add the label to both `zh` and `en` in `src/i18n.ts`. The grid is 3 columns.
 
 **Add a scope** — extend `Scope` in `src/types.ts`, `SCOPES` in `settings.ts`, the `scope` strings in `i18n.ts`, then handle it in `main.ts#currentWidthFor`/`currentAlignFor` and in both `modal.ts` apply methods.
+
+**Add a layout** — extend `Layout` in `src/types.ts`, `LAYOUTS` in `settings.ts`, both `i18n` strings, the `resolveLayout` normalizer, and add a `.isp-layout-*` rule after `.isp-force` in `styles.css`.
 
 **Add an alignment direction** — extend `Align`, `ALIGNS`, `ALIGN_OPTIONS`, both `i18n` strings, and the `.isp-align-*` rule in `styles.css`. The CSS contract test will fail if the rule is missing, which is the intended guardrail.
 

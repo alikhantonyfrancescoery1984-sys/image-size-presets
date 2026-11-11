@@ -1,16 +1,21 @@
 export type Align = 'inherit' | 'left' | 'center' | 'right';
 
+/** How images that sit next to each other are arranged. */
+export type Layout = 'stack' | 'cols2' | 'cols3';
+
 export interface FolderRule {
 	path: string;
 	/** Pixel cap. Omitted means "follow the default width". */
 	width?: number;
 	align?: Align;
+	layout?: Layout;
 }
 
 export interface PluginSettings {
 	defaultWidth: number;
 	defaultHeight: number;
 	defaultAlign: Align;
+	defaultLayout: Layout;
 	/** When true, a chosen size wins over an inline `|300` width. */
 	overrideInlineWidth: boolean;
 	folderRules: FolderRule[];

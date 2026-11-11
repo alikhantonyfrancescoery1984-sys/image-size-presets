@@ -20,6 +20,23 @@
 	width: auto !important;
 }
 
+/* Multi-column layouts: images that share a line split its width evenly.
+   The percentage replaces the pixel cap, so the chosen size no longer applies
+   exactly — that is the trade for not wasting the right half of the pane.
+   These rules must stay after .isp-force: same specificity, !important, so
+   source order decides the winner. */
+.isp-layout-cols2 img {
+	width: calc(50% - 11px) !important;
+	margin: 5px;
+	vertical-align: top;
+}
+
+.isp-layout-cols3 img {
+	width: calc(33.333% - 9px) !important;
+	margin: 4px;
+	vertical-align: top;
+}
+
 /* Alignment is opt-in: block display would otherwise stack images that
    were deliberately placed side by side on one line. */
 .isp-align-left img {

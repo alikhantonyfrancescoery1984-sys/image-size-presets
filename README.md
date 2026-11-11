@@ -12,6 +12,7 @@ Click the image icon in the ribbon (or run **Image size: open image size picker*
 
 - **Scope**: this note / this folder / all notes
 - **Size**: Tiny 160 · Small 240 · Medium 400 · Large 640 · Extra large 900 · No limit
+- **Layout**: stacked / 2 per row / 3 per row
 - **Alignment**: left / center / right / follow default
 - A status line naming the value in effect and which layer it came from
 
@@ -40,6 +41,14 @@ Alignment resolves the same way, using `image-align: center` in frontmatter.
 
 Left / center / right is opt-**in** per note, folder, or globally. It sets `display: block`, which means images you deliberately placed side by side on one line will stack vertically. That is why "follow default" is the default: untouched notes keep Obsidian's inline layout.
 
+## Layout
+
+Stacked, 2 per row, or 3 per row, with the same note → folder → vault precedence. Images that sit on the **same line** share that line's width evenly; a note where every image is on its own line keeps one image per line, because Markdown paragraphs do not merge.
+
+Choosing a multi-column layout replaces the pixel cap with a percentage of the row, so the preset size no longer applies exactly — that is the trade for not wasting the right half of the pane. The status line says so while a multi-column layout is active.
+
+Alignment is hidden in multi-column mode on purpose: it forces `display: block`, which would undo the columns.
+
 ## Settings
 
 | Setting | Default | Meaning |
@@ -48,6 +57,7 @@ Left / center / right is opt-**in** per note, folder, or globally. It sets `disp
 | Default maximum width | 560 | Fallback for notes without their own value. `0` = no limit |
 | Default maximum height | 0 | Optional cap for tall screenshots. A height cap binds before the width, which makes the chosen width look wrong — leave it at 0 |
 | Default alignment | follow default | Fallback alignment |
+| Default layout | stacked | Fallback layout |
 | Folder rules | empty | Added when you pick "this folder"; deletable |
 
 ## What it does not touch
@@ -67,6 +77,9 @@ Two rules in `styles.css`:
 }
 
 .isp-force img { width: auto !important; }
+
+.isp-layout-cols2 img { width: calc(50% - 11px) !important; margin: 5px; }
+.isp-layout-cols3 img { width: calc(33.333% - 9px) !important; margin: 4px; }
 ```
 
 On every file open, layout change and metadata change the plugin resolves width, alignment and the override flag for each open Markdown pane, then writes `--isp-width` / `--isp-height` and the classes onto that pane's container. No runtime `<style>` injection, so pop-out windows behave the same.
@@ -90,6 +103,7 @@ npm run lint   # eslint + eslint-plugin-obsidianmd
 - Settings rows do not appear in Obsidian 1.13+'s settings search yet (the declarative `getSettingDefinitions()` API is not adopted).
 - Folder rules match by path prefix, not by glob.
 - A max-height above 0 takes priority over the width on tall images.
+- Multi-column layouts only regroup images that already share a line; Markdown paragraphs are not merged.
 
 ## License
 
