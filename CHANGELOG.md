@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.3.1
+
+### Fixed
+
+- **Choosing a preset felt unresponsive.** The pane was repainted only after the
+  frontmatter write resolved, and the picker waited for it before closing. On a
+  slow disk that is a visible pause: measured 299ms for the write while the
+  screen showed nothing. The DOM now updates and the modal closes first (1ms),
+  and the write happens in the background.
+- **An unrelated refresh could cancel the reconcile.** While a pane was waiting
+  for its own write, any metadata event rescheduled the refresh and threw away
+  the timer that was supposed to reconcile afterwards. The pending window is now
+  re-armed instead.
+
 ## 1.3.0
 
 ### Removed

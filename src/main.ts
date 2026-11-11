@@ -148,7 +148,12 @@ export default class ImageSizePresetsPlugin extends Plugin {
 			// rather than reverting it to the value we just replaced.
 			const pendingUntil = this.pendingUntil.get(file.path);
 			if (pendingUntil !== undefined) {
-				if (now < pendingUntil) continue;
+				if (now < pendingUntil) {
+					// An unrelated refresh must not cancel the reconcile that
+					// was scheduled for when the write lands.
+					this.scheduleRefresh(pendingUntil - now + 20);
+					continue;
+				}
 				this.pendingUntil.delete(file.path);
 			}
 
@@ -262,27 +267,46 @@ export default class ImageSizePresetsPlugin extends Plugin {
 		return path ? t.sourceFolder(path) : t.sourceRoot;
 	}
 
-	async setNoteWidth(file: TFile, width: number): Promise<void> {
-		await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-			const fm = frontmatter as Record<string, unknown>;
-			fm[FM_KEY] = width > 0 ? width : 'none';
-		});
-		// Paint immediately: the metadata cache may not reflect the new
-		// frontmatter yet, and waiting for it makes the picker feel dead.
+	/**
+	 * Applies the width to the DOM right now and remembers that the pane must
+	 * not be reconciled until the write lands. Persisting is a separate step so
+	 * the UI never waits for the disk.
+	 */
+	applyNoteWidth(file: TFile, width: number): void {
 		this.pendingUntil.set(file.path, Date.now() + PENDING_MS);
 		this.paintWidth(file.path, width);
 		this.scheduleRefresh(PENDING_MS + 50);
 	}
 
-	async setNoteAlign(file: TFile, align: Align): Promise<void> {
+	async persistNoteWidth(file: TFile, width: number): Promise<void> {
+		await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+			const fm = frontmatter as Record<string, unknown>;
+			fm[FM_KEY] = width > 0 ? width : 'none';
+		});
+	}
+
+	async setNoteWidth(file: TFile, width: number): Promise<void> {
+		this.applyNoteWidth(file, width);
+		await this.persistNoteWidth(file, width);
+	}
+
+	applyNoteAlign(file: TFile, align: Align): void {
+		this.pendingUntil.set(file.path, Date.now() + PENDING_MS);
+		this.paintAlign(file.path, align);
+		this.scheduleRefresh(PENDING_MS + 50);
+	}
+
+	async persistNoteAlign(file: TFile, align: Align): Promise<void> {
 		await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
 			const fm = frontmatter as Record<string, unknown>;
 			if (align === 'inherit') delete fm[FM_ALIGN_KEY];
 			else fm[FM_ALIGN_KEY] = align;
 		});
-		this.pendingUntil.set(file.path, Date.now() + PENDING_MS);
-		this.paintAlign(file.path, align);
-		this.scheduleRefresh(PENDING_MS + 50);
+	}
+
+	async setNoteAlign(file: TFile, align: Align): Promise<void> {
+		this.applyNoteAlign(file, align);
+		await this.persistNoteAlign(file, align);
 	}
 
 	/** The view currently showing `path`, if any. */
@@ -309,41 +333,42 @@ export default class ImageSizePresetsPlugin extends Plugin {
 		this.lastState.delete(el);
 	}
 
-	async setFolderWidth(folderPath: string, width: number): Promise<void> {
-		await this.upsertFolderRule(folderPath, (rule) => ({ ...rule, width }));
+	setFolderWidth(folderPath: string, width: number): void {
+		this.upsertFolderRule(folderPath, (rule) => ({ ...rule, width }));
 	}
 
-	async setFolderAlign(folderPath: string, align: Align): Promise<void> {
-		await this.upsertFolderRule(folderPath, (rule) => ({ ...rule, align }));
+	setFolderAlign(folderPath: string, align: Align): void {
+		this.upsertFolderRule(folderPath, (rule) => ({ ...rule, align }));
 	}
 
-	private async upsertFolderRule(
+	private upsertFolderRule(
 		folderPath: string,
 		update: (rule: { path: string; width?: number; align?: Align }) => {
 			path: string;
 			width?: number;
 			align?: Align;
 		}
-	): Promise<void> {
+	): void {
 		const target = normalizeFolder(folderPath);
 		const rules = this.settings.folderRules.slice();
 		const index = rules.findIndex((rule) => normalizeFolder(rule.path) === target);
 		if (index >= 0) rules[index] = update(rules[index]);
 		else rules.push(update({ path: target }));
 		this.settings.folderRules = rules;
-		await this.saveSettings();
-		this.scheduleRefresh(0);
+		// Settings already live in memory: repaint now, write to disk after.
+		this.refresh();
+		void this.saveSettings();
 	}
 
-	async setGlobalWidth(width: number): Promise<void> {
+	setGlobalWidth(width: number): void {
 		this.settings.defaultWidth = width;
-		await this.saveSettings();
-		this.scheduleRefresh(0);
+		this.refresh();
+		void this.saveSettings();
 	}
 
-	async setGlobalAlign(align: Align): Promise<void> {
+	setGlobalAlign(align: Align): void {
 		this.settings.defaultAlign = align;
-		await this.saveSettings();
-		this.scheduleRefresh(0);
+		this.refresh();
+		void this.saveSettings();
 	}
 }

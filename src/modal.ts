@@ -64,7 +64,7 @@ export class SizePickerModal extends Modal {
 			chip.createSpan({ cls: 'isp-chip-label', text: t.sizes[size.key] });
 			chip.createSpan({ cls: 'isp-chip-value', text: this.sizeLabel(size.width) });
 			chip.addEventListener('click', () => {
-				void this.applySize(size, needFile);
+				this.applySize(size, needFile);
 			});
 		}
 
@@ -75,7 +75,7 @@ export class SizePickerModal extends Modal {
 			const button = alignRow.createEl('button', { cls: 'isp-align', text: t.align[option] });
 			if (option === currentAlign) button.addClass('is-active');
 			button.addEventListener('click', () => {
-				void this.applyAlign(option, needFile);
+				this.applyAlign(option, needFile);
 			});
 		}
 
@@ -89,7 +89,11 @@ export class SizePickerModal extends Modal {
 		}
 	}
 
-	private async applySize(size: SizeOption, needFile: boolean): Promise<void> {
+	/**
+	 * Everything the user can feel happens synchronously: the pane is repainted
+	 * and the modal closes before the frontmatter write is even started.
+	 */
+	private applySize(size: SizeOption, needFile: boolean): void {
 		if (needFile) {
 			new Notice(t.needFile);
 			return;
@@ -97,28 +101,27 @@ export class SizePickerModal extends Modal {
 
 		const file = this.app.workspace.getActiveFile();
 		const scopeLabel = t.scope[this.targetScope];
+		const sizeText = this.sizeLabel(size.width);
 
-		if (this.targetScope === 'note') {
-			if (!file) {
-				new Notice(t.needFile);
-				return;
-			}
-			await this.plugin.setNoteWidth(file, size.width);
+		if (this.targetScope === 'all') {
+			this.plugin.setGlobalWidth(size.width);
+		} else if (!file) {
+			new Notice(t.needFile);
+			return;
 		} else if (this.targetScope === 'folder') {
-			if (!file) {
-				new Notice(t.needFile);
-				return;
-			}
-			await this.plugin.setFolderWidth(folderPathOf(file), size.width);
+			this.plugin.setFolderWidth(folderPathOf(file), size.width);
 		} else {
-			await this.plugin.setGlobalWidth(size.width);
+			this.plugin.applyNoteWidth(file, size.width);
+			void this.plugin.persistNoteWidth(file, size.width).catch(() => {
+				/* the scheduled reconcile restores the previous value */
+			});
 		}
 
-		new Notice(t.applied(scopeLabel, this.sizeLabel(size.width)));
 		this.close();
+		new Notice(t.applied(scopeLabel, sizeText));
 	}
 
-	private async applyAlign(align: Align, needFile: boolean): Promise<void> {
+	private applyAlign(align: Align, needFile: boolean): void {
 		if (needFile) {
 			new Notice(t.needFile);
 			return;
@@ -127,20 +130,18 @@ export class SizePickerModal extends Modal {
 		const file = this.app.workspace.getActiveFile();
 		this.pendingAlign = align;
 
-		if (this.targetScope === 'note') {
-			if (!file) {
-				new Notice(t.needFile);
-				return;
-			}
-			await this.plugin.setNoteAlign(file, align);
+		if (this.targetScope === 'all') {
+			this.plugin.setGlobalAlign(align);
+		} else if (!file) {
+			new Notice(t.needFile);
+			return;
 		} else if (this.targetScope === 'folder') {
-			if (!file) {
-				new Notice(t.needFile);
-				return;
-			}
-			await this.plugin.setFolderAlign(folderPathOf(file), align);
+			this.plugin.setFolderAlign(folderPathOf(file), align);
 		} else {
-			await this.plugin.setGlobalAlign(align);
+			this.plugin.applyNoteAlign(file, align);
+			void this.plugin.persistNoteAlign(file, align).catch(() => {
+				/* the scheduled reconcile restores the previous value */
+			});
 		}
 
 		this.render();
