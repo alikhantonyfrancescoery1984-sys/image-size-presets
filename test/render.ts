@@ -37,16 +37,3 @@ export function renderedWidth(scene: Scene): number {
 	return Math.round(width);
 }
 
-/**
- * The column rules are percentage based with a fixed margin, so a rounding
- * error would silently turn "2 per row" into "1 per row". Mirror the numbers
- * from styles.css here.
- */
-export function itemsPerRow(containerWidth: number, columns: 2 | 3): number {
-	const width = columns === 2
-		? containerWidth * 0.5 - 11
-		: (containerWidth / 3) - 9;
-	const margin = columns === 2 ? 5 : 4;
-	const occupied = width + margin * 2;
-	return Math.floor(containerWidth / occupied);
-}

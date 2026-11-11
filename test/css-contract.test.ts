@@ -34,17 +34,6 @@ test('the cap applies in reading view, live preview and embeds', () => {
 	}
 });
 
-test('multi-column rules exist for two and three columns', () => {
-	for (const cols of [2, 3]) {
-		assert.match(css, new RegExp(`\.isp-layout-cols${cols} img\\s*\\{[^}]*width:\\s*calc\\(`));
-	}
-});
-
-test('column rules come after .isp-force so they win the !important tie', () => {
-	const force = css.indexOf('.isp-force img');
-	const cols2 = css.indexOf('.isp-layout-cols2 img');
-	const cols3 = css.indexOf('.isp-layout-cols3 img');
-	assert.ok(force >= 0, 'missing .isp-force img');
-	assert.ok(cols2 > force, '.isp-layout-cols2 must be declared after .isp-force');
-	assert.ok(cols3 > force, '.isp-layout-cols3 must be declared after .isp-force');
+test('the removed multi-column layout leaves no rules behind', () => {
+	assert.ok(!css.includes('isp-layout-'), 'stale column rules in styles.css');
 });

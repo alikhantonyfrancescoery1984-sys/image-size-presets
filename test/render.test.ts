@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { SIZES } from '../src/settings';
-import { itemsPerRow, renderedWidth } from './render';
+import { renderedWidth } from './render';
 
 const WIDE_PANE = 4000;
 
@@ -67,9 +67,3 @@ test('the reported case: 240 on a note whose images carry |209', () => {
 	assert.equal(renderedWidth({ ...scene, unified: false }), 209);
 });
 
-test('two and three column layouts really produce two and three per row', () => {
-	for (const container of [700, 900, 1100, 1400, 1600]) {
-		assert.equal(itemsPerRow(container, 2), 2, `2 columns at ${container}px`);
-		assert.equal(itemsPerRow(container, 3), 3, `3 columns at ${container}px`);
-	}
-});

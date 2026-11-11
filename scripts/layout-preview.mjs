@@ -4,12 +4,10 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 /**
- * Renders the layouts with the real styles.css in headless Chrome and saves
- * screenshots, so the result can be looked at instead of argued about.
+ * Renders a note with the real styles.css in headless Chrome and saves a
+ * screenshot, so the README has a real picture instead of a mock-up.
  *
- *   node scripts/layout-preview.mjs
- *
- * Writes docs/screenshot-stack.png, -cols2.png, -cols3.png.
+ *   node scripts/layout-preview.mjs   ->   docs/screenshot-stack.png
  */
 
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
@@ -34,12 +32,7 @@ function photo(n, portrait = true) {
 const embed = (n, portrait = true) =>
 	`<span class="internal-embed media-embed image-embed"><img src="${photo(n, portrait)}" width="209"></span>`;
 
-const images = [embed(1), embed(2), embed(3, false), embed(4)];
-
-function page({ title, subtitle, classes, height }) {
-	return {
-		height,
-		html: `<!doctype html>
+const html = `<!doctype html>
 <html lang="zh"><head><meta charset="utf-8">
 <link rel="stylesheet" href="file://${resolve('styles.css')}">
 <style>
@@ -52,44 +45,34 @@ function page({ title, subtitle, classes, height }) {
 	.pane { --isp-width: 240px; --isp-height: none; width: ${WIDTH}px; }
 </style>
 </head><body>
-<h1>${title}</h1>
-<p class="sub">${subtitle}</p>
-<div class="pane markdown-preview-view markdown-rendered ${classes}">
-<p>${images.join('')}</p>
+<h1>竖排 240px，居中</h1>
+<p class="sub">每张图不超过 240px，小图保持原样，不放大</p>
+<div class="pane markdown-preview-view markdown-rendered isp-force isp-align-center">
+<p>${[embed(1), embed(2), embed(3, false)].join('')}</p>
 </div>
-</body></html>`,
-	};
-}
-
-const pages = [
-	['stack', page({ title: '竖排 240px', subtitle: '一张一行，右侧大片留白', classes: 'isp-force', height: 760 })],
-	['cols2', page({ title: '2 张一排', subtitle: '每行两张，平分整行宽度', classes: 'isp-force isp-layout-cols2', height: 620 })],
-	['cols3', page({ title: '3 张一排', subtitle: '每行三张，平分整行宽度', classes: 'isp-force isp-layout-cols3', height: 520 })],
-];
+</body></html>`;
 
 const dir = mkdtempSync(join(tmpdir(), 'isp-preview-'));
 try {
-	for (const [name, spec] of pages) {
-		const file = join(dir, `${name}.html`);
-		writeFileSync(file, spec.html);
-		const out = join(OUT, `screenshot-${name}.png`);
-		execFileSync(
-			CHROME,
-			[
-				'--headless=new',
-				'--disable-gpu',
-				'--no-sandbox',
-				'--hide-scrollbars',
-				'--force-device-scale-factor=2',
-				'--virtual-time-budget=3000',
-				`--screenshot=${out}`,
-				`--window-size=${WIDTH + 64},${spec.height}`,
-				`file://${file}`,
-			],
-			{ stdio: 'ignore' }
-		);
-		console.log('wrote', out);
-	}
+	const file = join(dir, 'preview.html');
+	writeFileSync(file, html);
+	const out = join(OUT, 'screenshot-stack.png');
+	execFileSync(
+		CHROME,
+		[
+			'--headless=new',
+			'--disable-gpu',
+			'--no-sandbox',
+			'--hide-scrollbars',
+			'--force-device-scale-factor=2',
+			'--virtual-time-budget=3000',
+			`--screenshot=${out}`,
+			`--window-size=${WIDTH + 64},640`,
+			`file://${file}`,
+		],
+		{ stdio: 'ignore' }
+	);
+	console.log('wrote', out);
 } finally {
 	rmSync(dir, { recursive: true, force: true });
 }

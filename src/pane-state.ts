@@ -1,5 +1,5 @@
-import { resolveAlign, resolveLayout, resolveWidth } from './resolve';
-import type { Align, Layout, PluginSettings } from './types';
+import { resolveAlign, resolveWidth } from './resolve';
+import type { Align, PluginSettings } from './types';
 
 /**
  * Everything the plugin writes onto one Markdown pane, as a plain value.
@@ -11,7 +11,6 @@ export interface PaneState {
 	/** CSS value for --isp-height */
 	height: string;
 	force: boolean;
-	layout: Layout;
 	align: Align;
 }
 
@@ -41,24 +40,20 @@ export function computePaneState(input: PaneInput): PaneState | null {
 	const { frontmatter, folderPath, settings } = input;
 
 	const resolved = resolveWidth({ frontmatter, folderPath, settings });
-	const layout = resolveLayout({ frontmatter, folderPath, settings });
 	const align = resolveAlign({ frontmatter, folderPath, settings });
-
 	const height = Number(settings.defaultHeight);
 
 	return {
 		width: resolved.width > 0 ? `${resolved.width}px` : '100%',
 		height: Number.isFinite(height) && height > 0 ? `${height}px` : 'none',
 		force: settings.overrideInlineWidth,
-		layout,
-		// Block display would fight a multi-column layout.
-		align: layout === 'stack' ? align : 'inherit',
+		align,
 	};
 }
 
 /** Stable string identity, used to skip DOM writes that would change nothing. */
 export function paneStateKey(state: PaneState): string {
-	return [state.width, state.height, state.force ? '1' : '0', state.layout, state.align].join('|');
+	return [state.width, state.height, state.force ? '1' : '0', state.align].join('|');
 }
 
 export function samePaneState(a: PaneState | null, b: PaneState | null): boolean {

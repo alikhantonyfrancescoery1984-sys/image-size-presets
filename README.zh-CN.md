@@ -6,9 +6,7 @@ Obsidian 默认按原始分辨率显示图片，一张 2940px 宽的截图会占
 
 ![Obsidian](https://img.shields.io/badge/Obsidian-1.5.1%2B-6C5CE7) ![license](https://img.shields.io/badge/license-MIT-blue)
 
-| Stacked (240px) | 2 per row | 3 per row |
-| :---: | :---: | :---: |
-| <img src="docs/screenshot-stack.png" width="250"> | <img src="docs/screenshot-cols2.png" width="250"> | <img src="docs/screenshot-cols3.png" width="250"> |
+<img src="docs/screenshot-stack.png" width="620">
 
 ## 怎么用
 
@@ -16,7 +14,6 @@ Obsidian 默认按原始分辨率显示图片，一张 2940px 宽的截图会占
 
 - **作用范围**：本笔记 / 本文件夹 / 全部笔记
 - **大小**：极小 160 · 小 240 · 中 400 · 大 640 · 特大 900 · 不限
-- **排列**：竖排 / 2 张一排 / 3 张一排
 - **对齐**：左 / 居中 / 右 / 跟随默认
 - **状态行**：告诉你当前实际生效的值，以及它来自哪一层
 
@@ -29,7 +26,7 @@ Obsidian 默认按原始分辨率显示图片，一张 2940px 宽的截图会占
 同时保留两个性质：
 
 - **小图不会被放大。** 图片先按原始宽度渲染，再套上限——160px 的图标不管选哪档都还是 160px。
-- **不往你的笔记里写东西。** 尺寸存在 frontmatter（`image-width: 400`）和插件设置里，永远不改图片嵌入语法。
+- **不往笔记正文里写东西。** 尺寸存在 frontmatter（`image-width: 400`）和插件设置里，永远不改图片嵌入语法。
 
 如果你更想保留手调的宽度，去插件设置里关掉 **统一宽度**。那时图片只在自己超过上限时才缩小，`|300` 照旧优先。
 
@@ -41,18 +38,6 @@ Obsidian 默认按原始分辨率显示图片，一张 2940px 宽的截图会占
 
 对齐用同一套优先级，frontmatter 键是 `image-align`。
 
-## 对齐
-
-左 / 居中 / 右是**按需开启**的。它会把图片设成块级（`display: block`），也就是说你原本并排放在一行的多张图会变成竖排。所以默认是「跟随默认」——没动过的笔记保持 Obsidian 原来的行内排版。
-
-## 排列
-
-竖排 / 2 张一排 / 3 张一排，同样走「本笔记 > 本文件夹 > 全局」三层优先级。
-
-图片必须落在**同一行**才能并排：嵌入之间的换行在阅读视图里是硬换行，在编辑视图里是独立块。所以在当前笔记里选并排时，插件会把相邻的"纯图片行"合并成一行——可撤销，且只碰只含嵌入的行，正文一个字不改。
-
-选并排后，像素上限会换成行宽的百分比，所以选定的档位不再精确生效。这是"不浪费右半边"的代价，状态行会写明这一点。并排模式下对齐选项会被隐藏，因为它会强制 `display: block`，把并排拆掉。
-
 ## 设置页
 
 | 设置 | 默认 | 说明 |
@@ -61,7 +46,6 @@ Obsidian 默认按原始分辨率显示图片，一张 2940px 宽的截图会占
 | 默认最大宽度 | 560 | 没单独设置过的笔记用它。`0` = 不限制 |
 | 默认最大高度 | 0 | 可选的竖长图上限。**高度会先于宽度生效，导致你选的宽度看起来不准，建议保持 0** |
 | 默认对齐 | 跟随默认 | 兜底对齐方式 |
-| 默认排列 | 竖排 | 兜底排列方式 |
 | 文件夹规则 | 空 | 选「本文件夹」时自动添加，可删除 |
 
 ## 它管不到的地方
@@ -81,23 +65,26 @@ Obsidian 默认按原始分辨率显示图片，一张 2940px 宽的截图会占
 }
 
 .isp-force img { width: auto !important; }
-
-.isp-layout-cols2 img { width: calc(50% - 11px) !important; margin: 5px; }
-.isp-layout-cols3 img { width: calc(33.333% - 9px) !important; margin: 4px; }
 ```
 
 每次打开文件、布局变化、元数据变化时，插件为每个 Markdown 窗格算出宽度、对齐和覆盖开关，把 `--isp-width` / `--isp-height` 和对应 class 写到该窗格容器上。不注入运行时 `<style>`，所以弹出窗口表现一致。
 
-点预设时会**立刻**把新值画上去，再稍后校准一次——不用等元数据缓存更新，所以面板手感不会发飘。
+三个细节是为了不让图片闪烁或漏设：
+
+- 点预设时**立刻**把新值画上去，稍后再校准，面板手感不发飘
+- Obsidian 重建元数据缓存时 `getFileCache()` 返回 `null`，此时**不动**并稍后重试，而不是回退到默认宽度把每张图都改一遍
+- 算出的状态会和上次应用的比对，没变化就完全不碰 DOM（打字时每次按键都会触发元数据事件）
 
 ## 开发
 
 ```bash
 npm install
-npm run dev    # esbuild 监听
-npm run build  # tsc 类型检查 + 生产打包
-npm test       # node:test：解析逻辑、CSS 契约、渲染模型
-npm run lint   # eslint + eslint-plugin-obsidianmd
+npm run dev         # esbuild 监听
+npm run build       # tsc 类型检查 + 生产打包
+npm test            # node:test：解析、渲染模型、窗格状态、CSS 契约
+npm run test:layout # 无头 Chrome，量真实像素宽度
+npm run preview     # 重新生成 docs/screenshot-stack.png
+npm run lint        # eslint + eslint-plugin-obsidianmd
 ```
 
 `main.js` 是构建产物，不入库；由 Release 附带。
@@ -106,8 +93,7 @@ npm run lint   # eslint + eslint-plugin-obsidianmd
 
 - 设置项还没接入 Obsidian 1.13+ 的设置搜索（尚未采用声明式 `getSettingDefinitions()` API）。
 - 文件夹规则按路径前缀匹配，不支持 glob。
-- 最大高度设成大于 0 时，竖长图片会先撞高度，导致宽度不准；并排模式下它也会把单元格压小。
-- 并排只对写在同一行的图生效，不会跨段落合并。
+- 最大高度设成大于 0 时，竖长图片会先撞高度，导致宽度不准。
 
 ## 许可证
 

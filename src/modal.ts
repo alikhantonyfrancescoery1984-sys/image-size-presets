@@ -1,19 +1,17 @@
 import { App, Modal, Notice } from 'obsidian';
 import { t } from './i18n';
 import { folderPathOf } from './resolve';
-import { ALIGN_OPTIONS, LAYOUTS, SCOPES, SIZES } from './settings';
+import { ALIGN_OPTIONS, SCOPES, SIZES } from './settings';
 import type ImageSizePresetsPlugin from './main';
-import type { Align, Layout, Scope, SizeOption } from './types';
+import type { Align, Scope, SizeOption } from './types';
 
 export class SizePickerModal extends Modal {
 	private readonly plugin: ImageSizePresetsPlugin;
 
 	private targetScope: Scope;
 
-	/** Optimistic values, so a row highlights before the cache settles. */
+	/** Optimistic alignment, so the row highlights before the cache settles. */
 	private pendingAlign: Align | null = null;
-
-	private pendingLayout: Layout | null = null;
 
 	constructor(app: App, plugin: ImageSizePresetsPlugin, scope?: Scope) {
 		super(app);
@@ -51,7 +49,6 @@ export class SizePickerModal extends Modal {
 			button.addEventListener('click', () => {
 				if (this.targetScope === candidate) return;
 				this.targetScope = candidate;
-				this.pendingLayout = null;
 				this.pendingAlign = null;
 				this.render();
 			});
@@ -71,30 +68,15 @@ export class SizePickerModal extends Modal {
 			});
 		}
 
-		const currentLayout = this.pendingLayout ?? this.plugin.currentLayoutFor(this.targetScope, file);
-
-		contentEl.createDiv({ cls: 'isp-subtitle', text: t.layoutTitle });
-		const layoutRow = contentEl.createDiv({ cls: 'isp-aligns' });
-		for (const option of LAYOUTS) {
-			const button = layoutRow.createEl('button', { cls: 'isp-align', text: t.layout[option] });
-			if (option === currentLayout) button.addClass('is-active');
+		contentEl.createDiv({ cls: 'isp-subtitle', text: t.alignTitle });
+		const alignRow = contentEl.createDiv({ cls: 'isp-aligns' });
+		const currentAlign = this.pendingAlign ?? this.plugin.currentAlignFor(this.targetScope, file);
+		for (const option of ALIGN_OPTIONS) {
+			const button = alignRow.createEl('button', { cls: 'isp-align', text: t.align[option] });
+			if (option === currentAlign) button.addClass('is-active');
 			button.addEventListener('click', () => {
-				void this.applyLayout(option, needFile);
+				void this.applyAlign(option, needFile);
 			});
-		}
-
-		// Alignment forces block display, so it only makes sense while stacked.
-		if (currentLayout === 'stack') {
-			contentEl.createDiv({ cls: 'isp-subtitle', text: t.alignTitle });
-			const alignRow = contentEl.createDiv({ cls: 'isp-aligns' });
-			const currentAlign = this.pendingAlign ?? this.plugin.currentAlignFor(this.targetScope, file);
-			for (const option of ALIGN_OPTIONS) {
-				const button = alignRow.createEl('button', { cls: 'isp-align', text: t.align[option] });
-				if (option === currentAlign) button.addClass('is-active');
-				button.addEventListener('click', () => {
-					void this.applyAlign(option, needFile);
-				});
-			}
 		}
 
 		const effective = this.plugin.effectiveWidthFor(file);
@@ -102,9 +84,6 @@ export class SizePickerModal extends Modal {
 		status.createDiv({
 			text: t.status(this.sizeLabel(effective.width ?? 0), this.plugin.describeSource(effective)),
 		});
-		if (currentLayout !== 'stack') {
-			status.createDiv({ cls: 'isp-status-note', text: t.layoutNote });
-		}
 		if (this.plugin.settings.overrideInlineWidth) {
 			status.createDiv({ cls: 'isp-status-note', text: t.forceHint });
 		}
@@ -137,38 +116,6 @@ export class SizePickerModal extends Modal {
 
 		new Notice(t.applied(scopeLabel, this.sizeLabel(size.width)));
 		this.close();
-	}
-
-	private async applyLayout(layout: Layout, needFile: boolean): Promise<void> {
-		if (needFile) {
-			new Notice(t.needFile);
-			return;
-		}
-
-		const file = this.app.workspace.getActiveFile();
-		this.pendingLayout = layout;
-
-		if (this.targetScope === 'note') {
-			if (!file) {
-				new Notice(t.needFile);
-				return;
-			}
-			await this.plugin.setNoteLayout(file, layout);
-			if (layout !== 'stack') {
-				const joined = await this.plugin.tidyImageLines(file);
-				if (joined > 0) new Notice(t.tidied(joined));
-			}
-		} else if (this.targetScope === 'folder') {
-			if (!file) {
-				new Notice(t.needFile);
-				return;
-			}
-			await this.plugin.setFolderLayout(folderPathOf(file), layout);
-		} else {
-			await this.plugin.setGlobalLayout(layout);
-		}
-
-		this.render();
 	}
 
 	private async applyAlign(align: Align, needFile: boolean): Promise<void> {

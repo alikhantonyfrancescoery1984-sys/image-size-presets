@@ -20,8 +20,8 @@ const IMG = (natural, widthAttr, id) =>
 		`<svg xmlns="http://www.w3.org/2000/svg" width="${natural}" height="${Math.round(natural * 0.75)}"></svg>`
 	)}"${widthAttr ? ` width="${widthAttr}"` : ''}></span>`;
 
-function pane({ id, cls, width, height = 'none', force, layout, align, images }) {
-	const classes = [cls, force ? 'isp-force' : '', layout === 'cols2' ? 'isp-layout-cols2' : '', layout === 'cols3' ? 'isp-layout-cols3' : '', align && align !== 'inherit' ? `isp-align-${align}` : '']
+function pane({ id, width, height = 'none', force, align, images }) {
+	const classes = [force ? 'isp-force' : '', align && align !== 'inherit' ? `isp-align-${align}` : '']
 		.filter(Boolean)
 		.join(' ');
 	return `<div class="pane ${classes}" id="pane-${id}" style="width:${PANE}px;--isp-width:${width};--isp-height:${height}">
@@ -30,53 +30,22 @@ function pane({ id, cls, width, height = 'none', force, layout, align, images })
 }
 
 const scenarios = [
-	pane({
-		id: 'stack-240',
-		width: '240px',
-		force: true,
-		images: IMG(3000, 553, 'a1'),
-	}),
-	pane({
-		id: 'stack-small',
-		width: '240px',
-		force: true,
-		images: IMG(150, null, 'b1'),
-	}),
+	pane({ id: 'stack-240', width: '240px', force: true, images: IMG(3000, 553, 'a1') }),
+	pane({ id: 'stack-small', width: '240px', force: true, images: IMG(150, null, 'b1') }),
 	pane({
 		id: 'legacy-cap',
 		width: '240px',
 		force: false,
 		images: IMG(3000, 553, 'c1') + IMG(3000, 209, 'c2'),
 	}),
+	pane({ id: 'align-center', width: '240px', force: true, align: 'center', images: IMG(3000, null, 'f1') }),
+	// A source line break between embeds renders as <br>; the size presets must
+	// still cap both images at the chosen value.
 	pane({
-		id: 'cols2',
+		id: 'br-separated',
 		width: '240px',
 		force: true,
-		layout: 'cols2',
-		images: [1, 2, 3, 4].map((n) => IMG(3000, 553, `d${n}`)).join(''),
-	}),
-	pane({
-		id: 'cols3',
-		width: '240px',
-		force: true,
-		layout: 'cols3',
-		images: [1, 2, 3, 4, 5, 6].map((n) => IMG(3000, 553, `e${n}`)).join(''),
-	}),
-	pane({
-		id: 'cols2-br',
-		width: '240px',
-		force: true,
-		layout: 'cols2',
-		// Consecutive image lines in a note become one <p> with <br> between
-		// the embeds. This is the shape that broke "2 per row" in practice.
-		images: [1, 2, 3, 4].map((n) => IMG(3000, 553, `g${n}`)).join('<br>'),
-	}),
-	pane({
-		id: 'align-center',
-		width: '240px',
-		force: true,
-		align: 'center',
-		images: IMG(3000, null, 'f1'),
+		images: IMG(3000, 553, 'g1') + '<br>' + IMG(3000, 553, 'g2'),
 	}),
 ];
 
@@ -95,13 +64,12 @@ ${scenarios.join('\n')}
 	const results = [];
 	const measure = (id) => {
 		const paneEl = document.getElementById('pane-' + id);
-		const imgs = [...paneEl.querySelectorAll('img')];
-		return imgs.map((img) => {
+		return [...paneEl.querySelectorAll('img')].map((img) => {
 			const r = img.getBoundingClientRect();
 			return { w: Math.round(r.width), top: Math.round(img.offsetTop), left: Math.round(img.offsetLeft) };
 		});
 	};
-	for (const id of ['stack-240','stack-small','legacy-cap','cols2','cols3','cols2-br','align-center']) {
+	for (const id of ['stack-240','stack-small','legacy-cap','align-center','br-separated']) {
 		results.push({ id, images: measure(id) });
 	}
 	document.getElementById('out').textContent = JSON.stringify(results);
@@ -157,37 +125,13 @@ const check = (label, actual, expected) => {
 	console.log(`${ok ? '✔' : '✘'} ${label}: ${actual}${ok ? '' : ` (expected ${expected})`}`);
 };
 
-// A: a 240px cap overrides an inline |553 on a huge image
 check('stack 240 caps a |553 image', byId['stack-240'][0].w, 240);
-// B: a 150px image is not upscaled to the 240 cap
 check('stack 240 keeps a 150px image at 150', byId['stack-small'][0].w, 150);
-// C: legacy mode caps 553 to 240 but leaves 209 alone
 check('legacy: |553 capped to 240', byId['legacy-cap'][0].w, 240);
 check('legacy: |209 untouched', byId['legacy-cap'][1].w, 209);
-
-// D: two per row means the first two share a row and the third starts a new one
-const cols2 = byId.cols2;
-check('cols2: four images fill two rows', new Set(cols2.map((i) => i.top)).size, 2);
-check('cols2: first row holds two', cols2.filter((i) => i.top === cols2[0].top).length, 2);
-// The cap must not clamp the column width back down: that made "two per row"
-// render as three 240px images with gaps.
-check('cols2: images are wider than the 240px cap', cols2[0].w > 400, true);
-check('cols2: images roughly half the 900px pane', cols2[0].w > 420 && cols2[0].w < 460, true);
-
-// E: three per row
-const cols3 = byId.cols3;
-check('cols3: six images fill two rows', new Set(cols3.map((i) => i.top)).size, 2);
-check('cols3: first row holds three', cols3.filter((i) => i.top === cols3[0].top).length, 3);
-check('cols3: images roughly a third of the pane', cols3[0].w > 280 && cols3[0].w < 305, true);
-
-// F: the <br> form must lay out exactly like the single-line form
-const cols2br = byId['cols2-br'];
-check('cols2 with <br>: four images fill two rows', new Set(cols2br.map((i) => i.top)).size, 2);
-check('cols2 with <br>: first row holds two', cols2br.filter((i) => i.top === cols2br[0].top).length, 2);
-
-// G: centring offsets the image from the left edge
-const centered = byId['align-center'][0];
-check('align center offsets the image', centered.left > 100, true);
+check('align center offsets the image', byId['align-center'][0].left > 100, true);
+check('br-separated: first image at 240', byId['br-separated'][0].w, 240);
+check('br-separated: second image at 240', byId['br-separated'][1].w, 240);
 
 console.log(failures === 0 ? '\nLAYOUT OK' : `\n${failures} LAYOUT FAILURES`);
 process.exit(failures === 0 ? 0 : 1);

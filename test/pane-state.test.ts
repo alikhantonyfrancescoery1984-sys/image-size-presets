@@ -9,7 +9,6 @@ const settings: PluginSettings = {
 	defaultWidth: 560,
 	defaultHeight: 0,
 	defaultAlign: 'inherit',
-	defaultLayout: 'stack',
 	overrideInlineWidth: true,
 	schemaVersion: 2,
 	folderRules: [{ path: 'AI learning', width: 400 }],
@@ -39,9 +38,7 @@ test('a cache that is ready but empty is a real answer, not a null', () => {
 });
 
 test('the note frontmatter wins over folder and default', () => {
-	const state = computePaneState(
-		input({ frontmatter: { 'image-width': 240 }, folderPath: 'AI learning' })
-	);
+	const state = computePaneState(input({ frontmatter: { 'image-width': 240 }, folderPath: 'AI learning' }));
 	assert.equal(state?.width, '240px');
 });
 
@@ -57,29 +54,17 @@ test('"no limit" becomes 100%, never a pixel width', () => {
 
 test('height defaults to none and only becomes px when set', () => {
 	assert.equal(computePaneState(input())?.height, 'none');
-	assert.equal(
-		computePaneState(input({ settings: { ...settings, defaultHeight: 1200 } }))?.height,
-		'1200px'
-	);
+	assert.equal(computePaneState(input({ settings: { ...settings, defaultHeight: 1200 } }))?.height, '1200px');
 });
 
-test('alignment is dropped while a multi-column layout is active', () => {
-	const stacked = computePaneState(input({ frontmatter: { 'image-align': 'center' } }));
-	assert.equal(stacked?.align, 'center');
-
-	const columns = computePaneState(
-		input({ frontmatter: { 'image-align': 'center', 'image-layout': 2 } })
-	);
-	assert.equal(columns?.layout, 'cols2');
-	assert.equal(columns?.align, 'inherit');
+test('alignment travels with the state', () => {
+	assert.equal(computePaneState(input({ frontmatter: { 'image-align': 'center' } }))?.align, 'center');
+	assert.equal(computePaneState(input())?.align, 'inherit');
 });
 
 test('the override flag travels with the state', () => {
 	assert.equal(computePaneState(input())?.force, true);
-	assert.equal(
-		computePaneState(input({ settings: { ...settings, overrideInlineWidth: false } }))?.force,
-		false
-	);
+	assert.equal(computePaneState(input({ settings: { ...settings, overrideInlineWidth: false } }))?.force, false);
 });
 
 test('identical inputs produce an identical key, so refresh skips the DOM', () => {

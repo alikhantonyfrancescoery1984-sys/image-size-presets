@@ -1,7 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { FM_ALIGN_KEY, FM_KEY, FM_LAYOUT_KEY, findFolderRule, normalizeLayout, resolveLayout, folderPathOf, normalizeAlign, normalizeFolder, normalizeWidth, resolveAlign, resolveWidth } from '../src/resolve';
+import {
+	FM_ALIGN_KEY,
+	FM_KEY,
+	findFolderRule,
+	folderPathOf,
+	normalizeAlign,
+	normalizeFolder,
+	normalizeWidth,
+	resolveAlign,
+	resolveWidth,
+} from '../src/resolve';
 import type { PluginSettings } from '../src/types';
 
 const settings: PluginSettings = {
@@ -13,7 +23,6 @@ const settings: PluginSettings = {
 	folderRules: [
 		{ path: 'AI learning', width: 400 },
 		{ path: 'AI learning/sub', width: 300, align: 'center' },
-		{ path: 'gallery', layout: 'cols3' },
 	],
 };
 
@@ -91,10 +100,7 @@ test('resolveWidth applies note > folder > default', () => {
 });
 
 test('a folder rule may carry alignment without a width', () => {
-	const onlyAlign: PluginSettings = {
-		...settings,
-		folderRules: [{ path: 'AlignOnly', align: 'right' }],
-	};
+	const onlyAlign: PluginSettings = { ...settings, folderRules: [{ path: 'AlignOnly', align: 'right' }] };
 	assert.deepEqual(resolveWidth({ frontmatter: null, folderPath: 'AlignOnly', settings: onlyAlign }), {
 		width: 560,
 		source: 'default',
@@ -121,7 +127,10 @@ test('resolveWidth falls through on junk values', () => {
 });
 
 test('resolveAlign applies note > folder > default', () => {
-	assert.equal(resolveAlign({ frontmatter: { [FM_ALIGN_KEY]: 'left' }, folderPath: 'AI learning/sub', settings }), 'left');
+	assert.equal(
+		resolveAlign({ frontmatter: { [FM_ALIGN_KEY]: 'left' }, folderPath: 'AI learning/sub', settings }),
+		'left'
+	);
 	assert.equal(resolveAlign({ frontmatter: {}, folderPath: 'AI learning/sub', settings }), 'center');
 	assert.equal(resolveAlign({ frontmatter: {}, folderPath: 'AI learning', settings }), 'inherit');
 	assert.equal(
@@ -143,34 +152,4 @@ test('resolveWidth survives missing settings', () => {
 		width: 560,
 		source: 'default',
 	});
-});
-
-test('normalizeLayout accepts numbers, words and rejects junk', () => {
-	assert.equal(normalizeLayout(2), 'cols2');
-	assert.equal(normalizeLayout(3), 'cols3');
-	assert.equal(normalizeLayout(1), 'stack');
-	assert.equal(normalizeLayout('2'), 'cols2');
-	assert.equal(normalizeLayout('COLS3'), 'cols3');
-	assert.equal(normalizeLayout('stack'), 'stack');
-	assert.equal(normalizeLayout('none'), 'stack');
-	assert.equal(normalizeLayout(4), null);
-	assert.equal(normalizeLayout(null), null);
-});
-
-test('resolveLayout applies note > folder > default', () => {
-	assert.equal(resolveLayout({ frontmatter: { [FM_LAYOUT_KEY]: 2 }, folderPath: 'gallery', settings }), 'cols2');
-	assert.equal(resolveLayout({ frontmatter: {}, folderPath: 'gallery', settings }), 'cols3');
-	assert.equal(resolveLayout({ frontmatter: {}, folderPath: 'Other', settings }), 'stack');
-	assert.equal(
-		resolveLayout({ frontmatter: {}, folderPath: 'Other', settings: { ...settings, defaultLayout: 'cols2' } }),
-		'cols2'
-	);
-});
-
-test('a folder rule may carry a layout without a width', () => {
-	assert.deepEqual(resolveWidth({ frontmatter: null, folderPath: 'gallery', settings }), {
-		width: 560,
-		source: 'default',
-	});
-	assert.equal(resolveLayout({ frontmatter: null, folderPath: 'gallery', settings }), 'cols3');
 });

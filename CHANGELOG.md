@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.3.0
+
+### Removed
+
+- **Multi-column layouts** (2 or 3 per row), together with the line-merging and
+  `<br>` handling they needed. Papering over how Obsidian splits source lines
+  added more surface than the feature was worth. Size presets and left / center /
+  right alignment remain.
+
+### Changed
+
+- `image-layout` is no longer read; existing frontmatter keys are ignored and can
+  be deleted.
+
 ## 1.2.3
 
 ### Fixed

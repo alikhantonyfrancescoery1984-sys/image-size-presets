@@ -20,35 +20,6 @@
 	width: auto !important;
 }
 
-/* Multi-column layouts: images that share a line split its width evenly.
-   The percentage replaces the pixel cap, so the chosen size no longer applies
-   exactly — that is the trade for not wasting the right half of the pane.
-   These rules must stay after .isp-force: same specificity, !important, so
-   source order decides the winner. */
-.isp-layout-cols2 img {
-	width: calc(50% - 11px) !important;
-	/* Without this the pixel cap clamps the percentage straight back down and
-	   three capped images fit on a "two per row" line. */
-	max-width: 100% !important;
-	margin: 5px;
-	vertical-align: top;
-}
-
-.isp-layout-cols3 img {
-	width: calc(33.333% - 9px) !important;
-	max-width: 100% !important;
-	margin: 4px;
-	vertical-align: top;
-}
-
-/* A source line break between images becomes a <br> inside the same paragraph,
-   which forces one image per line no matter how narrow the images are. Drop
-   those breaks while a column layout is active. */
-.isp-layout-cols2 p:has(> .internal-embed) > br,
-.isp-layout-cols3 p:has(> .internal-embed) > br {
-	display: none;
-}
-
 /* Alignment is opt-in: block display would otherwise stack images that
    were deliberately placed side by side on one line. */
 .isp-align-left img {
