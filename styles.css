@@ -1,7 +1,7 @@
 /* ============================================================
    Image Size Presets
-   The caps themselves live here; each pane's values are written
-   onto its container element as --isp-width / --isp-height.
+   The caps live here; each pane writes --isp-width / --isp-height
+   onto its container element.
    ============================================================ */
 
 .markdown-preview-view img,
@@ -10,6 +10,34 @@
 .markdown-source-view.is-live-preview img {
 	max-width: min(100%, var(--isp-width, 100%));
 	max-height: var(--isp-height, none);
+}
+
+/* Unified mode: the chosen size wins over an inline `|300` width.
+   `width: auto` makes the image render at its natural size, which the
+   max-width above then caps — so small images stay small and large ones
+   land exactly on the chosen value. */
+.isp-force img {
+	width: auto !important;
+}
+
+/* Alignment is opt-in: block display would otherwise stack images that
+   were deliberately placed side by side on one line. */
+.isp-align-left img {
+	display: block;
+	margin-left: 0;
+	margin-right: auto;
+}
+
+.isp-align-center img {
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.isp-align-right img {
+	display: block;
+	margin-left: auto;
+	margin-right: 0;
 }
 
 /* ---------------- picker modal ---------------- */
@@ -99,12 +127,54 @@
 	line-height: 1.2;
 }
 
+.isp-subtitle {
+	margin: 18px 0 8px;
+	font-size: var(--font-ui-small);
+	font-weight: 600;
+	color: var(--text-muted);
+}
+
+.isp-aligns {
+	display: flex;
+	gap: 8px;
+}
+
+.isp-align {
+	flex: 1 1 0;
+	padding: 7px 6px;
+	border-radius: var(--radius-s);
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-primary);
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+	cursor: pointer;
+	box-shadow: none;
+	height: auto;
+}
+
+.isp-align:hover {
+	background: var(--background-modifier-hover);
+}
+
+.isp-align.is-active {
+	border-color: var(--interactive-accent);
+	box-shadow: inset 0 0 0 1px var(--interactive-accent);
+}
+
 .isp-status {
 	margin-top: 16px;
 	padding-top: 12px;
 	border-top: 1px solid var(--background-modifier-border);
 	font-size: var(--font-ui-small);
 	color: var(--text-muted);
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.isp-status-note {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
 }
 
 /* ---------------- settings tab ---------------- */

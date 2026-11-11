@@ -1,12 +1,20 @@
+export type Align = 'inherit' | 'left' | 'center' | 'right';
+
 export interface FolderRule {
 	path: string;
-	width: number;
+	/** Pixel cap. Omitted means "follow the default width". */
+	width?: number;
+	align?: Align;
 }
 
 export interface PluginSettings {
 	defaultWidth: number;
 	defaultHeight: number;
+	defaultAlign: Align;
+	/** When true, a chosen size wins over an inline `|300` width. */
+	overrideInlineWidth: boolean;
 	folderRules: FolderRule[];
+	schemaVersion: number;
 }
 
 export type SizeKey = 'xs' | 's' | 'm' | 'l' | 'xl' | 'none';

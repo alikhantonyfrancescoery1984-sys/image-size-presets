@@ -2,79 +2,76 @@
 
 Set a default image size for **a note**, **a folder**, or **your whole vault** — with one click, no CSS and no per-image dragging.
 
-Obsidian caps images at their natural size by default, which means a 2940px screenshot fills the whole editor. Dragging the corner of every pasted screenshot gets old fast. This plugin replaces that with six presets and three scopes.
+Obsidian shows images at their natural resolution, so a 2940px screenshot fills the editor. Dragging the corner of every pasted screenshot gets old fast. This plugin replaces that with six presets and three scopes.
 
-![picker](https://img.shields.io/badge/Obsidian-1.5.1%2B-6C5CE7) ![license](https://img.shields.io/badge/license-MIT-blue)
+![Obsidian](https://img.shields.io/badge/Obsidian-1.5.1%2B-6C5CE7) ![license](https://img.shields.io/badge/license-MIT-blue)
 
 ## What it does
 
-Click the image icon in the ribbon (or run **Image size: open image size picker**) and you get:
+Click the image icon in the ribbon (or run **Image size: open image size picker**):
 
 - **Scope**: this note / this folder / all notes
 - **Size**: Tiny 160 · Small 240 · Medium 400 · Large 640 · Extra large 900 · No limit
-- A status line telling you which value is currently in effect and where it comes from
+- **Alignment**: left / center / right / follow default
+- A status line naming the value in effect and which layer it came from
 
-Pick a size, the panel closes, done. Two clicks.
+Pick a size, the panel closes, done.
 
-## How the size is resolved
+## The chosen size wins
 
-Highest priority first:
+By default a preset **overrides the inline `|300` width** an image may carry. That is what makes the control feel responsive: switching 240 → 400 → 640 changes every oversized image in the note immediately.
 
-1. **This note** — stored as `image-width: 400` in the note's frontmatter. Editable in the Properties panel like any other property; set it to `none` for no limit.
-2. **This folder** — stored in the plugin settings. The deepest matching rule wins (`AI learning/sub` beats `AI learning`).
-3. **Global default** — 560px, adjust with a slider in the plugin settings.
+Two properties are preserved:
 
-Two details that matter:
+- **Small images are not upscaled.** The image renders at its natural width, then the cap applies — a 160px icon stays 160px no matter which preset is active.
+- **Nothing is written into your notes.** The size lives in frontmatter (`image-width: 400`) and in plugin settings, never in the image embeds.
 
-- **It only caps, it never upscales.** An image narrower than the cap keeps its natural width, so icons and small diagrams stay sharp. A 2940px screenshot gets scaled down.
-- **Existing `![[image|553]]` widths keep working.** They are only compressed further when they exceed the cap, so nothing you hand-tuned jumps around.
+If you would rather keep hand-tuned inline widths, turn off **Unify width** in the plugin settings. Images then only shrink when they exceed the cap, and `|300` wins as before.
 
-A separate **maximum height** cap (default 900px, configurable) keeps tall phone screenshots from dominating the page.
+## Precedence
 
-## Install
+1. **This note** — `image-width: 400` in frontmatter (set `none` for no limit). Editable in the Properties panel.
+2. **This folder** — stored in plugin settings; the deepest matching rule wins (`AI learning/sub` beats `AI learning`).
+3. **Global default** — 560px.
 
-### BRAT (recommended while not in the community directory)
+Alignment resolves the same way, using `image-align: center` in frontmatter.
 
-1. Install [BRAT](https://github.com/TfTHacker/obsidian42-brat).
-2. **BRAT → Add beta plugin** → `alikhantonyfrancescoery1984-sys/image-size-presets`.
-3. Enable **Image Size Presets** in **Settings → Community plugins**.
+## Alignment
 
-### Manual
-
-Download `main.js`, `manifest.json` and `styles.css` from the [latest release](https://github.com/alikhantonyfrancescoery1984-sys/image-size-presets/releases) into `YourVault/.obsidian/plugins/image-size-presets/`, then reload Obsidian.
-
-Requires Obsidian **1.5.1** or newer.
-
-## What it does not touch
-
-- **Canvas and Excalidraw** embeds — they are not `<img>` elements inside a Markdown view.
-- **Pandoc / PDF / Word exports** — those read the width written in the Markdown, not what is displayed on screen. If you need exports to respect a size, the `image-width` frontmatter is visible but the export pipeline has the final say.
+Left / center / right is opt-**in** per note, folder, or globally. It sets `display: block`, which means images you deliberately placed side by side on one line will stack vertically. That is why "follow default" is the default: untouched notes keep Obsidian's inline layout.
 
 ## Settings
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
-| Default maximum width | 560 | Cap for notes without their own value. `0` = no limit |
-| Default maximum height | 900 | Caps tall screenshots. `0` = no limit |
-| Folder rules | empty | Added automatically when you pick "this folder"; deletable |
+| Unify width (ignore inline `\|width`) | on | Chosen size applies to every image; off restores cap-only behaviour |
+| Default maximum width | 560 | Fallback for notes without their own value. `0` = no limit |
+| Default maximum height | 0 | Optional cap for tall screenshots. A height cap binds before the width, which makes the chosen width look wrong — leave it at 0 |
+| Default alignment | follow default | Fallback alignment |
+| Folder rules | empty | Added when you pick "this folder"; deletable |
+
+## What it does not touch
+
+- **Canvas and Excalidraw** embeds — not `<img>` elements inside a Markdown view.
+- **Pandoc / PDF / Word exports** — those read the width written in the Markdown, not what is displayed on screen.
 
 ## How it works
 
-`styles.css` holds one rule:
+Two rules in `styles.css`:
 
 ```css
-.markdown-preview-view img,
-.markdown-reading-view img,
-.markdown-rendered img,
-.markdown-source-view.is-live-preview img {
+.markdown-preview-view img, .markdown-reading-view img,
+.markdown-rendered img, .markdown-source-view.is-live-preview img {
 	max-width: min(100%, var(--isp-width, 100%));
 	max-height: var(--isp-height, none);
 }
+
+.isp-force img { width: auto !important; }
 ```
 
-On every file open, layout change and metadata change, the plugin resolves the width for each open Markdown pane and writes `--isp-width` / `--isp-height` onto that pane's container element. Nothing is injected into other windows at runtime, so pop-out windows behave the same.
+On every file open, layout change and metadata change the plugin resolves width, alignment and the override flag for each open Markdown pane, then writes `--isp-width` / `--isp-height` and the classes onto that pane's container. No runtime `<style>` injection, so pop-out windows behave the same.
 
-The resolution logic lives in `src/resolve.ts` as pure functions with no runtime imports, which is what the unit tests exercise.
+Clicking a preset paints the new value immediately and reconciles a moment later, so the picker never feels laggy while the metadata cache catches up.
 
 ## Development
 
@@ -82,7 +79,7 @@ The resolution logic lives in `src/resolve.ts` as pure functions with no runtime
 npm install
 npm run dev    # esbuild watch
 npm run build  # tsc --noEmit + production bundle
-npm test       # node:test, bundled with esbuild
+npm test       # node:test: resolution, CSS contract, render model
 npm run lint   # eslint + eslint-plugin-obsidianmd
 ```
 
@@ -90,8 +87,9 @@ npm run lint   # eslint + eslint-plugin-obsidianmd
 
 ## Known limitations
 
-- Settings rows do not yet appear in Obsidian 1.13+'s settings search (the declarative `getSettingDefinitions()` API is not adopted yet).
+- Settings rows do not appear in Obsidian 1.13+'s settings search yet (the declarative `getSettingDefinitions()` API is not adopted).
 - Folder rules match by path prefix, not by glob.
+- A max-height above 0 takes priority over the width on tall images.
 
 ## License
 

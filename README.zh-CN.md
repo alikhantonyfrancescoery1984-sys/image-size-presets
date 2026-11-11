@@ -2,13 +2,9 @@
 
 一次点击，给**一篇笔记**、**一个文件夹**或**整个库**设定图片显示大小。不用写 CSS，也不用一张张拖动角点。
 
+Obsidian 默认按原始分辨率显示图片，一张 2940px 宽的截图会占满编辑区。每贴一张都拖一次，时间久了很烦。这个插件把这件事变成两次点击。
+
 ![Obsidian](https://img.shields.io/badge/Obsidian-1.5.1%2B-6C5CE7) ![license](https://img.shields.io/badge/license-MIT-blue)
-
-## 它解决什么问题
-
-Obsidian 默认按图片原始分辨率显示，一张 2940px 宽的截图会占满整个编辑区。每贴一张都拖右下角缩一次，时间久了很烦。
-
-这个插件把这件事变成两次点击。
 
 ## 怎么用
 
@@ -16,69 +12,66 @@ Obsidian 默认按图片原始分辨率显示，一张 2940px 宽的截图会占
 
 - **作用范围**：本笔记 / 本文件夹 / 全部笔记
 - **大小**：极小 160 · 小 240 · 中 400 · 大 640 · 特大 900 · 不限
-- **状态行**：告诉你当前实际生效的是哪个值、来自哪一层
+- **对齐**：左 / 居中 / 右 / 跟随默认
+- **状态行**：告诉你当前实际生效的值，以及它来自哪一层
 
 选一个，面板自动关，立刻生效。
 
+## 选定的大小会压过图片自带宽度
+
+默认情况下，预设会**覆盖图片自带的 `|300` 宽度**。这是它"灵敏"的关键：240 → 400 → 640 之间切换时，笔记里每张超宽的图都会立刻跟着变。
+
+同时保留两个性质：
+
+- **小图不会被放大。** 图片先按原始宽度渲染，再套上限——160px 的图标不管选哪档都还是 160px。
+- **不往你的笔记里写东西。** 尺寸存在 frontmatter（`image-width: 400`）和插件设置里，永远不改图片嵌入语法。
+
+如果你更想保留手调的宽度，去插件设置里关掉 **统一宽度**。那时图片只在自己超过上限时才缩小，`|300` 照旧优先。
+
 ## 优先级
 
-从高到低：
+1. **本笔记** —— frontmatter 里的 `image-width: 400`（填 `none` 表示不限制），可在「属性」面板里改。
+2. **本文件夹** —— 存在插件设置里；子文件夹取最精确的那条（`AI learning/sub` 优先于 `AI learning`）。
+3. **全局默认** —— 560px。
 
-1. **本笔记** —— 写进笔记属性 `image-width: 400`。你可以在「属性」面板里像改别的属性一样手改，填 `none` 表示不限制。
-2. **本文件夹** —— 存在插件设置里。子文件夹取最精确的那条（`AI learning/sub` 优先于 `AI learning`）。
-3. **全局默认** —— 560px，在插件设置页用滑块调。
+对齐用同一套优先级，frontmatter 键是 `image-align`。
 
-两个关键设计：
+## 对齐
 
-- **只封顶，不放大。** 本身比上限小的图片保持原尺寸，图标和小图不会被拉糊；超宽的截图才会缩。
-- **已有的 `![[图片|553]]` 照旧生效。** 只有当它超过上限时才会再压一层，你之前手调过的宽度不会突然跳变。
+左 / 居中 / 右是**按需开启**的。它会把图片设成块级（`display: block`），也就是说你原本并排放在一行的多张图会变成竖排。所以默认是「跟随默认」——没动过的笔记保持 Obsidian 原来的行内排版。
 
-另外有一个**最大高度**上限（默认 900px，可调），用来管竖长的手机截图。
+## 设置页
 
-## 安装
-
-### BRAT（推荐，官方目录上架前）
-
-1. 安装 [BRAT](https://github.com/TfTHacker/obsidian42-brat)。
-2. **BRAT → Add beta plugin** → 填 `alikhantonyfrancescoery1984-sys/image-size-presets`。
-3. 在 **设置 → 第三方插件** 里启用「图片大小预设」。
-
-### 手动安装
-
-从 [最新 Release](https://github.com/alikhantonyfrancescoery1984-sys/image-size-presets/releases) 下载 `main.js`、`manifest.json`、`styles.css`，放进 `你的库/.obsidian/plugins/image-size-presets/`，然后重载 Obsidian。
-
-需要 Obsidian **1.5.1** 及以上。
+| 设置 | 默认 | 说明 |
+| --- | --- | --- |
+| 统一宽度（忽略图片自带的 `\|宽度`） | 开 | 选定的大小对每张图都生效；关掉后只在自己超过上限时缩小 |
+| 默认最大宽度 | 560 | 没单独设置过的笔记用它。`0` = 不限制 |
+| 默认最大高度 | 0 | 可选的竖长图上限。**高度会先于宽度生效，导致你选的宽度看起来不准，建议保持 0** |
+| 默认对齐 | 跟随默认 | 兜底对齐方式 |
+| 文件夹规则 | 空 | 选「本文件夹」时自动添加，可删除 |
 
 ## 它管不到的地方
 
 - **Canvas 和 Excalidraw** 里的图片 —— 它们不是 Markdown 视图里的 `<img>`。
-- **Pandoc / PDF / Word 导出** —— 导出读的是 Markdown 里写的宽度，不是屏幕上显示的效果。
-
-## 设置页
-
-| 设置 | 默认值 | 说明 |
-| --- | --- | --- |
-| 默认最大宽度 | 560 | 没单独设置过的笔记用它。`0` = 不限制 |
-| 默认最大高度 | 900 | 管竖长截图。`0` = 不限制 |
-| 文件夹规则 | 空 | 选「本文件夹」时自动添加，可删除 |
+- **Pandoc / PDF / Word 导出** —— 导出读的是 Markdown 里写的宽度，不是屏幕上的显示效果。
 
 ## 实现方式
 
-核心就是 `styles.css` 里一条规则：
+`styles.css` 里两条规则：
 
 ```css
-.markdown-preview-view img,
-.markdown-reading-view img,
-.markdown-rendered img,
-.markdown-source-view.is-live-preview img {
+.markdown-preview-view img, .markdown-reading-view img,
+.markdown-rendered img, .markdown-source-view.is-live-preview img {
 	max-width: min(100%, var(--isp-width, 100%));
 	max-height: var(--isp-height, none);
 }
+
+.isp-force img { width: auto !important; }
 ```
 
-每次打开文件、布局变化、元数据变化时，插件为每个 Markdown 窗格算出宽度，把 `--isp-width` / `--isp-height` 写到该窗格的容器元素上。不往别的窗口里注入运行时样式，所以弹出窗口（pop-out）表现一致。
+每次打开文件、布局变化、元数据变化时，插件为每个 Markdown 窗格算出宽度、对齐和覆盖开关，把 `--isp-width` / `--isp-height` 和对应 class 写到该窗格容器上。不注入运行时 `<style>`，所以弹出窗口表现一致。
 
-解析逻辑集中在 `src/resolve.ts`，是没有任何运行时依赖的纯函数，单测直接测它。
+点预设时会**立刻**把新值画上去，再稍后校准一次——不用等元数据缓存更新，所以面板手感不会发飘。
 
 ## 开发
 
@@ -86,7 +79,7 @@ Obsidian 默认按图片原始分辨率显示，一张 2940px 宽的截图会占
 npm install
 npm run dev    # esbuild 监听
 npm run build  # tsc 类型检查 + 生产打包
-npm test       # node:test
+npm test       # node:test：解析逻辑、CSS 契约、渲染模型
 npm run lint   # eslint + eslint-plugin-obsidianmd
 ```
 
@@ -94,8 +87,9 @@ npm run lint   # eslint + eslint-plugin-obsidianmd
 
 ## 已知限制
 
-- 设置项暂未接入 Obsidian 1.13+ 的设置搜索（还没采用声明式 `getSettingDefinitions()` API）。
+- 设置项还没接入 Obsidian 1.13+ 的设置搜索（尚未采用声明式 `getSettingDefinitions()` API）。
 - 文件夹规则按路径前缀匹配，不支持 glob。
+- 最大高度设成大于 0 时，竖长图片会先撞高度，导致宽度不准。
 
 ## 许可证
 

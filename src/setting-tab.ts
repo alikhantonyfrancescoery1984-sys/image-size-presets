@@ -1,7 +1,8 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
 import { t } from './i18n';
-import { normalizeFolder } from './resolve';
+import { normalizeAlign, normalizeFolder } from './resolve';
 import type ImageSizePresetsPlugin from './main';
+import type { Align } from './types';
 
 export class ImageSizeSettingTab extends PluginSettingTab {
 	private readonly plugin: ImageSizePresetsPlugin;
@@ -20,6 +21,17 @@ export class ImageSizeSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl).setName(t.settingsTitle).setHeading();
 		containerEl.createEl('p', { cls: 'isp-hint', text: t.settingsDesc });
+
+		new Setting(containerEl)
+			.setName(t.overrideLabel)
+			.setDesc(t.overrideDesc)
+			.addToggle((toggle) =>
+				toggle.setValue(settings.overrideInlineWidth).onChange(async (value) => {
+					settings.overrideInlineWidth = value;
+					await this.plugin.saveSettings();
+					this.plugin.scheduleRefresh(0);
+				})
+			);
 
 		new Setting(containerEl)
 			.setName(t.defaultWidth)
@@ -49,6 +61,25 @@ export class ImageSizeSettingTab extends PluginSettingTab {
 					})
 			);
 
+		new Setting(containerEl)
+			.setName(t.defaultAlignLabel)
+			.setDesc(t.defaultAlignDesc)
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOptions({
+						inherit: t.align.inherit,
+						left: t.align.left,
+						center: t.align.center,
+						right: t.align.right,
+					})
+					.setValue(settings.defaultAlign)
+					.onChange(async (value) => {
+						settings.defaultAlign = normalizeAlign(value) ?? 'inherit';
+						await this.plugin.saveSettings();
+						this.plugin.scheduleRefresh(0);
+					})
+			);
+
 		new Setting(containerEl).setName(t.folderRules).setHeading();
 
 		const rules = Array.isArray(settings.folderRules) ? settings.folderRules : [];
@@ -58,10 +89,16 @@ export class ImageSizeSettingTab extends PluginSettingTab {
 
 		for (const rule of rules.slice()) {
 			const path = normalizeFolder(rule.path);
-			const width = Number(rule.width);
+			const width = rule.width === undefined ? null : Number(rule.width);
+			const align = normalizeAlign(rule.align) ?? 'inherit';
+			const details = [
+				width === null ? t.followDefault : width > 0 ? `${width}px` : t.noLimit,
+				align === 'inherit' ? null : t.align[align as Align],
+			].filter((part): part is string => part !== null);
+
 			new Setting(containerEl)
 				.setName(path || t.rootFolder)
-				.setDesc(width > 0 ? `${width}px` : t.noLimit)
+				.setDesc(details.join(' · '))
 				.addButton((button) =>
 					button
 						.setButtonText(t.ruleDelete)

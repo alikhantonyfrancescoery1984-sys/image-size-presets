@@ -1,23 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import {
-	FALLBACK_WIDTH,
-	FM_KEY,
-	findFolderRule,
-	folderPathOf,
-	normalizeFolder,
-	normalizeWidth,
-	resolveWidth,
-} from '../src/resolve';
+import { FM_ALIGN_KEY, FM_KEY, findFolderRule, folderPathOf, normalizeAlign, normalizeFolder, normalizeWidth, resolveAlign, resolveWidth } from '../src/resolve';
 import type { PluginSettings } from '../src/types';
 
 const settings: PluginSettings = {
 	defaultWidth: 560,
-	defaultHeight: 900,
+	defaultHeight: 0,
+	defaultAlign: 'inherit',
+	overrideInlineWidth: true,
+	schemaVersion: 2,
 	folderRules: [
 		{ path: 'AI learning', width: 400 },
-		{ path: 'AI learning/sub', width: 300 },
+		{ path: 'AI learning/sub', width: 300, align: 'center' },
 	],
 };
 
@@ -42,6 +37,16 @@ test('normalizeWidth returns null when not set', () => {
 	assert.equal(normalizeWidth(''), null);
 	assert.equal(normalizeWidth('abc'), null);
 	assert.equal(normalizeWidth({}), null);
+});
+
+test('normalizeAlign accepts the four states and rejects junk', () => {
+	assert.equal(normalizeAlign('center'), 'center');
+	assert.equal(normalizeAlign('LEFT'), 'left');
+	assert.equal(normalizeAlign('right'), 'right');
+	assert.equal(normalizeAlign('none'), 'inherit');
+	assert.equal(normalizeAlign('default'), 'inherit');
+	assert.equal(normalizeAlign('middle'), null);
+	assert.equal(normalizeAlign(null), null);
 });
 
 test('normalizeFolder trims separators', () => {
@@ -84,6 +89,18 @@ test('resolveWidth applies note > folder > default', () => {
 	});
 });
 
+test('a folder rule may carry alignment without a width', () => {
+	const onlyAlign: PluginSettings = {
+		...settings,
+		folderRules: [{ path: 'AlignOnly', align: 'right' }],
+	};
+	assert.deepEqual(resolveWidth({ frontmatter: null, folderPath: 'AlignOnly', settings: onlyAlign }), {
+		width: 560,
+		source: 'default',
+	});
+	assert.equal(resolveAlign({ frontmatter: null, folderPath: 'AlignOnly', settings: onlyAlign }), 'right');
+});
+
 test('resolveWidth honours explicit "no limit"', () => {
 	assert.deepEqual(resolveWidth({ frontmatter: { [FM_KEY]: 'none' }, folderPath: 'AI learning', settings }), {
 		width: 0,
@@ -102,10 +119,27 @@ test('resolveWidth falls through on junk values', () => {
 	});
 });
 
+test('resolveAlign applies note > folder > default', () => {
+	assert.equal(resolveAlign({ frontmatter: { [FM_ALIGN_KEY]: 'left' }, folderPath: 'AI learning/sub', settings }), 'left');
+	assert.equal(resolveAlign({ frontmatter: {}, folderPath: 'AI learning/sub', settings }), 'center');
+	assert.equal(resolveAlign({ frontmatter: {}, folderPath: 'AI learning', settings }), 'inherit');
+	assert.equal(
+		resolveAlign({ frontmatter: {}, folderPath: 'Other', settings: { ...settings, defaultAlign: 'right' } }),
+		'right'
+	);
+});
+
+test('resolveAlign lets a note opt back out to inherit', () => {
+	assert.equal(
+		resolveAlign({ frontmatter: { [FM_ALIGN_KEY]: 'none' }, folderPath: 'AI learning/sub', settings }),
+		'inherit'
+	);
+});
+
 test('resolveWidth survives missing settings', () => {
-	const broken = { defaultWidth: Number.NaN, defaultHeight: 0, folderRules: [] } as PluginSettings;
+	const broken = { ...settings, defaultWidth: Number.NaN, folderRules: [] } as PluginSettings;
 	assert.deepEqual(resolveWidth({ frontmatter: null, folderPath: '', settings: broken }), {
-		width: FALLBACK_WIDTH,
+		width: 560,
 		source: 'default',
 	});
 });

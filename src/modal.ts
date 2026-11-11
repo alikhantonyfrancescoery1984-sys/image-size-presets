@@ -1,14 +1,17 @@
 import { App, Modal, Notice } from 'obsidian';
 import { t } from './i18n';
 import { folderPathOf } from './resolve';
-import { SCOPES, SIZES } from './settings';
+import { ALIGN_OPTIONS, SCOPES, SIZES } from './settings';
 import type ImageSizePresetsPlugin from './main';
-import type { Scope, SizeOption } from './types';
+import type { Align, Scope, SizeOption } from './types';
 
 export class SizePickerModal extends Modal {
 	private readonly plugin: ImageSizePresetsPlugin;
 
 	private targetScope: Scope;
+
+	/** Optimistic alignment, so the row highlights before the cache settles. */
+	private pendingAlign: Align | null = null;
 
 	constructor(app: App, plugin: ImageSizePresetsPlugin, scope?: Scope) {
 		super(app);
@@ -60,18 +63,33 @@ export class SizePickerModal extends Modal {
 			chip.createSpan({ cls: 'isp-chip-label', text: t.sizes[size.key] });
 			chip.createSpan({ cls: 'isp-chip-value', text: this.sizeLabel(size.width) });
 			chip.addEventListener('click', () => {
-				void this.apply(size, needFile);
+				void this.applySize(size, needFile);
+			});
+		}
+
+		// Alignment is a second, independent axis, so it gets its own row.
+		contentEl.createDiv({ cls: 'isp-subtitle', text: t.alignTitle });
+		const alignRow = contentEl.createDiv({ cls: 'isp-aligns' });
+		const currentAlign = this.pendingAlign ?? this.plugin.currentAlignFor(this.targetScope, file);
+		for (const option of ALIGN_OPTIONS) {
+			const button = alignRow.createEl('button', { cls: 'isp-align', text: t.align[option] });
+			if (option === currentAlign) button.addClass('is-active');
+			button.addEventListener('click', () => {
+				void this.applyAlign(option, needFile);
 			});
 		}
 
 		const effective = this.plugin.effectiveWidthFor(file);
-		contentEl.createDiv({
-			cls: 'isp-status',
+		const status = contentEl.createDiv({ cls: 'isp-status' });
+		status.createDiv({
 			text: t.status(this.sizeLabel(effective.width ?? 0), this.plugin.describeSource(effective)),
 		});
+		if (this.plugin.settings.overrideInlineWidth) {
+			status.createDiv({ cls: 'isp-status-note', text: t.forceHint });
+		}
 	}
 
-	private async apply(size: SizeOption, needFile: boolean): Promise<void> {
+	private async applySize(size: SizeOption, needFile: boolean): Promise<void> {
 		if (needFile) {
 			new Notice(t.needFile);
 			return;
@@ -98,5 +116,34 @@ export class SizePickerModal extends Modal {
 
 		new Notice(t.applied(scopeLabel, this.sizeLabel(size.width)));
 		this.close();
+	}
+
+	private async applyAlign(align: Align, needFile: boolean): Promise<void> {
+		if (needFile) {
+			new Notice(t.needFile);
+			return;
+		}
+
+		const file = this.app.workspace.getActiveFile();
+		this.pendingAlign = align;
+
+		if (this.targetScope === 'note') {
+			if (!file) {
+				new Notice(t.needFile);
+				return;
+			}
+			await this.plugin.setNoteAlign(file, align);
+			this.render();
+		} else if (this.targetScope === 'folder') {
+			if (!file) {
+				new Notice(t.needFile);
+				return;
+			}
+			await this.plugin.setFolderAlign(folderPathOf(file), align);
+			this.render();
+		} else {
+			await this.plugin.setGlobalAlign(align);
+			this.render();
+		}
 	}
 }

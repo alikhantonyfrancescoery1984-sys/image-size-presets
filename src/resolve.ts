@@ -2,10 +2,13 @@
  * Pure resolution logic. No runtime imports on purpose: this module can be
  * bundled, type-stripped, or unit tested in isolation.
  */
-import type { FileLike, FolderRule, PluginSettings, Resolution } from './types';
+import type { Align, FileLike, FolderRule, PluginSettings, Resolution } from './types';
 
-/** Frontmatter key written into a note. */
+/** Frontmatter key for the width. */
 export const FM_KEY = 'image-width';
+
+/** Frontmatter key for the alignment. */
+export const FM_ALIGN_KEY = 'image-align';
 
 /** Used when settings are missing or unusable. */
 export const FALLBACK_WIDTH = 560;
@@ -45,6 +48,14 @@ export function normalizeWidth(value: unknown): number | null {
 	return n > 0 ? Math.round(n) : 0;
 }
 
+export function normalizeAlign(value: unknown): Align | null {
+	if (typeof value !== 'string') return null;
+	const s = value.trim().toLowerCase();
+	if (s === 'left' || s === 'center' || s === 'right') return s;
+	if (s === 'inherit' || s === 'none' || s === 'default') return 'inherit';
+	return null;
+}
+
 /** Deepest matching folder rule wins: "a/b" beats "a". */
 export function findFolderRule(folderPath: string, rules: FolderRule[] | undefined): FolderRule | null {
 	const target = normalizeFolder(folderPath);
@@ -73,7 +84,7 @@ export function resolveWidth(input: {
 	if (noteValue !== null) return { width: noteValue, source: 'note' };
 
 	const rule = findFolderRule(input.folderPath ?? '', input.settings.folderRules);
-	if (rule) {
+	if (rule && rule.width !== undefined) {
 		const ruleWidth = normalizeWidth(rule.width);
 		if (ruleWidth !== null) {
 			return { width: ruleWidth, source: `folder:${normalizeFolder(rule.path)}` };
@@ -82,4 +93,20 @@ export function resolveWidth(input: {
 
 	const fallback = normalizeWidth(input.settings.defaultWidth);
 	return { width: fallback === null ? FALLBACK_WIDTH : fallback, source: 'default' };
+}
+
+/** Note frontmatter > folder rule > global default. Falls back to "inherit". */
+export function resolveAlign(input: {
+	frontmatter?: Record<string, unknown> | null;
+	folderPath?: string;
+	settings: PluginSettings;
+}): Align {
+	const noteValue = normalizeAlign(input.frontmatter ? input.frontmatter[FM_ALIGN_KEY] : null);
+	if (noteValue !== null) return noteValue;
+
+	const rule = findFolderRule(input.folderPath ?? '', input.settings.folderRules);
+	const ruleAlign = rule ? normalizeAlign(rule.align) : null;
+	if (ruleAlign !== null) return ruleAlign;
+
+	return normalizeAlign(input.settings.defaultAlign) ?? 'inherit';
 }
