@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.2.3
+
+### Fixed
+
+- **"2 per row" still stacked when each image sat on its own line.** Consecutive
+  image lines become one paragraph with a `<br>` between embeds in reading view,
+  and separate blocks in Live Preview, so a 50% width could never put two on a
+  line. The `<br>` breaks are now hidden in column mode, and choosing a column
+  layout for the current note merges adjacent image-only lines in the source
+  (undoable, prose untouched — only lines that contain nothing but embeds).
+
+### Tests
+
+- `joinAdjacentImageLines` covered by 7 unit tests, including "prose between
+  images prevents merging" and "frontmatter is never touched".
+- The headless layout harness now includes the `<br>` form, which is the shape
+  that actually broke.
+
 ## 1.2.2
 
 ### Fixed

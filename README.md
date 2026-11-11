@@ -51,6 +51,8 @@ Stacked, 2 per row, or 3 per row, with the same note → folder → vault preced
 
 Choosing a multi-column layout replaces the pixel cap with a percentage of the row, so the preset size no longer applies exactly — that is the trade for not wasting the right half of the pane. The status line says so while a multi-column layout is active.
 
+Images must end up on **one line** for this to work. A line break between embeds is a hard break in reading view and a separate block in Live Preview, so picking a column layout for the current note merges adjacent image-only lines in the source — undoable, and only lines that contain nothing but embeds are touched.
+
 Alignment is hidden in multi-column mode on purpose: it forces `display: block`, which would undo the columns.
 
 ## Settings

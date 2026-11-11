@@ -3,4 +3,5 @@
 import './resolve.test';
 import './render.test';
 import './pane-state.test';
+import './tidy.test';
 import './css-contract.test';

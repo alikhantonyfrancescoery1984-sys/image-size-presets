@@ -41,6 +41,14 @@
 	vertical-align: top;
 }
 
+/* A source line break between images becomes a <br> inside the same paragraph,
+   which forces one image per line no matter how narrow the images are. Drop
+   those breaks while a column layout is active. */
+.isp-layout-cols2 p:has(> .internal-embed) > br,
+.isp-layout-cols3 p:has(> .internal-embed) > br {
+	display: none;
+}
+
 /* Alignment is opt-in: block display would otherwise stack images that
    were deliberately placed side by side on one line. */
 .isp-align-left img {

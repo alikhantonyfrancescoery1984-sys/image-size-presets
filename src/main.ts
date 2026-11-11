@@ -18,6 +18,7 @@ import {
 } from './resolve';
 import { ALIGNS, DEFAULT_SETTINGS, SETTINGS_SCHEMA } from './settings';
 import { ImageSizeSettingTab } from './setting-tab';
+import { joinAdjacentImageLines } from './tidy';
 import type { Align, Layout, PluginSettings, Scope, ScopeResolution } from './types';
 
 /** How long our own frontmatter write may take to reach the metadata cache. */
@@ -314,6 +315,28 @@ export default class ImageSizePresetsPlugin extends Plugin {
 		this.pendingUntil.set(file.path, Date.now() + PENDING_MS);
 		this.paintLayout(file.path, layout);
 		this.scheduleRefresh(PENDING_MS + 50);
+	}
+
+	/**
+	 * Merges adjacent image-only lines so a column layout can actually put the
+	 * images side by side: a line break between embeds is a hard break in
+	 * reading view and a separate block in Live Preview.
+	 */
+	async tidyImageLines(file: TFile): Promise<number> {
+		const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+		const isActive = !!view && view.file?.path === file.path;
+		const current = isActive ? view.editor.getValue() : await this.app.vault.read(file);
+		const { content, joined } = joinAdjacentImageLines(current);
+		if (joined === 0) return 0;
+
+		if (isActive && view) {
+			const editor = view.editor;
+			const last = editor.lastLine();
+			editor.replaceRange(content, { line: 0, ch: 0 }, { line: last, ch: editor.getLine(last).length });
+		} else {
+			await this.app.vault.modify(file, content);
+		}
+		return joined;
 	}
 
 	/** The view currently showing `path`, if any. */

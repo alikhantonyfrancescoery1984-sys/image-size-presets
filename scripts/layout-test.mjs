@@ -63,6 +63,15 @@ const scenarios = [
 		images: [1, 2, 3, 4, 5, 6].map((n) => IMG(3000, 553, `e${n}`)).join(''),
 	}),
 	pane({
+		id: 'cols2-br',
+		width: '240px',
+		force: true,
+		layout: 'cols2',
+		// Consecutive image lines in a note become one <p> with <br> between
+		// the embeds. This is the shape that broke "2 per row" in practice.
+		images: [1, 2, 3, 4].map((n) => IMG(3000, 553, `g${n}`)).join('<br>'),
+	}),
+	pane({
 		id: 'align-center',
 		width: '240px',
 		force: true,
@@ -92,7 +101,7 @@ ${scenarios.join('\n')}
 			return { w: Math.round(r.width), top: Math.round(img.offsetTop), left: Math.round(img.offsetLeft) };
 		});
 	};
-	for (const id of ['stack-240','stack-small','legacy-cap','cols2','cols3','align-center']) {
+	for (const id of ['stack-240','stack-small','legacy-cap','cols2','cols3','cols2-br','align-center']) {
 		results.push({ id, images: measure(id) });
 	}
 	document.getElementById('out').textContent = JSON.stringify(results);
@@ -171,7 +180,12 @@ check('cols3: six images fill two rows', new Set(cols3.map((i) => i.top)).size, 
 check('cols3: first row holds three', cols3.filter((i) => i.top === cols3[0].top).length, 3);
 check('cols3: images roughly a third of the pane', cols3[0].w > 280 && cols3[0].w < 305, true);
 
-// F: centring offsets the image from the left edge
+// F: the <br> form must lay out exactly like the single-line form
+const cols2br = byId['cols2-br'];
+check('cols2 with <br>: four images fill two rows', new Set(cols2br.map((i) => i.top)).size, 2);
+check('cols2 with <br>: first row holds two', cols2br.filter((i) => i.top === cols2br[0].top).length, 2);
+
+// G: centring offsets the image from the left edge
 const centered = byId['align-center'][0];
 check('align center offsets the image', centered.left > 100, true);
 

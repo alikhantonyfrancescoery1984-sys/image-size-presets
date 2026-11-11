@@ -154,6 +154,10 @@ export class SizePickerModal extends Modal {
 				return;
 			}
 			await this.plugin.setNoteLayout(file, layout);
+			if (layout !== 'stack') {
+				const joined = await this.plugin.tidyImageLines(file);
+				if (joined > 0) new Notice(t.tidied(joined));
+			}
 		} else if (this.targetScope === 'folder') {
 			if (!file) {
 				new Notice(t.needFile);
