@@ -1,12 +1,14 @@
 {
   "name": "image-size-presets",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Set default image sizes per note, folder, or vault with one click.",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "tsc --noEmit --skipLibCheck && node esbuild.config.mjs production",
     "test": "node scripts/test.mjs",
+    "test:layout": "node scripts/layout-test.mjs",
+    "preview": "node scripts/layout-preview.mjs",
     "lint": "eslint src",
     "version": "node version-bump.mjs && git add manifest.json versions.json"
   },

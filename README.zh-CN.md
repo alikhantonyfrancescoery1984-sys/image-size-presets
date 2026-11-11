@@ -6,6 +6,10 @@ Obsidian 默认按原始分辨率显示图片，一张 2940px 宽的截图会占
 
 ![Obsidian](https://img.shields.io/badge/Obsidian-1.5.1%2B-6C5CE7) ![license](https://img.shields.io/badge/license-MIT-blue)
 
+| Stacked (240px) | 2 per row | 3 per row |
+| :---: | :---: | :---: |
+| <img src="docs/screenshot-stack.png" width="250"> | <img src="docs/screenshot-cols2.png" width="250"> | <img src="docs/screenshot-cols3.png" width="250"> |
+
 ## 怎么用
 
 点左侧边栏的图片图标（或命令面板执行 **图片大小：打开图片大小面板**）：
@@ -102,7 +106,7 @@ npm run lint   # eslint + eslint-plugin-obsidianmd
 
 - 设置项还没接入 Obsidian 1.13+ 的设置搜索（尚未采用声明式 `getSettingDefinitions()` API）。
 - 文件夹规则按路径前缀匹配，不支持 glob。
-- 最大高度设成大于 0 时，竖长图片会先撞高度，导致宽度不准。
+- 最大高度设成大于 0 时，竖长图片会先撞高度，导致宽度不准；并排模式下它也会把单元格压小。
 - 并排只对写在同一行的图生效，不会跨段落合并。
 
 ## 许可证

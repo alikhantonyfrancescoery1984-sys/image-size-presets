@@ -34,6 +34,11 @@ export default class ImageSizePresetsPlugin extends Plugin {
 	/** Panes we painted ourselves and must not revert until the cache agrees. */
 	private pendingUntil = new Map<string, number>();
 
+	/** Retries while a pane's metadata cache is still unreadable. */
+	private retryTimer: number | null = null;
+
+	private retries = 0;
+
 	async onload(): Promise<void> {
 		await this.loadSettings();
 
@@ -67,6 +72,9 @@ export default class ImageSizePresetsPlugin extends Plugin {
 		this.registerEvent(this.app.workspace.on('layout-change', () => this.scheduleRefresh(0)));
 		this.registerEvent(this.app.workspace.on('file-open', () => this.scheduleRefresh(0)));
 		this.registerEvent(this.app.metadataCache.on('changed', () => this.scheduleRefresh(120)));
+		// Fires once the initial index is built; without it a pane opened during
+		// startup could keep the "cache not ready" state forever.
+		this.registerEvent(this.app.metadataCache.on('resolved', () => this.scheduleRefresh(0)));
 
 		this.addSettingTab(new ImageSizeSettingTab(this.app, this));
 
@@ -77,6 +85,10 @@ export default class ImageSizePresetsPlugin extends Plugin {
 		if (this.refreshTimer !== null) {
 			window.clearTimeout(this.refreshTimer);
 			this.refreshTimer = null;
+		}
+		if (this.retryTimer !== null) {
+			window.clearTimeout(this.retryTimer);
+			this.retryTimer = null;
 		}
 		for (const leaf of this.app.workspace.getLeavesOfType('markdown')) {
 			const view = leaf.view;
@@ -123,6 +135,7 @@ export default class ImageSizePresetsPlugin extends Plugin {
 	/** Writes the caps, the override flag, the layout and the alignment onto each pane. */
 	refresh(): void {
 		const now = Date.now();
+		let retryNeeded = false;
 		for (const leaf of this.app.workspace.getLeavesOfType('markdown')) {
 			const view = leaf.view;
 			if (!(view instanceof MarkdownView)) continue;
@@ -150,8 +163,11 @@ export default class ImageSizePresetsPlugin extends Plugin {
 				settings: this.settings,
 			});
 			// null means the metadata cache is mid-rebuild: touching the pane
-			// now would resize images and force a re-decode.
-			if (!state) continue;
+			// now would resize images and force a re-decode. Come back shortly.
+			if (!state) {
+				retryNeeded = true;
+				continue;
+			}
 
 			const key = paneStateKey(state);
 			if (this.lastState.get(el) === key) continue;
@@ -159,6 +175,24 @@ export default class ImageSizePresetsPlugin extends Plugin {
 			this.applyPaneState(el, state);
 			this.lastState.set(el, key);
 		}
+
+		if (retryNeeded) this.scheduleRetry();
+		else this.retries = 0;
+	}
+
+	/**
+	 * A pane whose metadata cache is unreadable must not stay unstyled: the
+	 * images would keep their inline widths and look "not applied". Retry with
+	 * a bound so a permanently unreadable file cannot spin forever.
+	 */
+	private scheduleRetry(): void {
+		if (this.retries >= 10) return;
+		this.retries += 1;
+		if (this.retryTimer !== null) window.clearTimeout(this.retryTimer);
+		this.retryTimer = window.setTimeout(() => {
+			this.retryTimer = null;
+			this.refresh();
+		}, 200);
 	}
 
 	private applyPaneState(el: HTMLElement, state: PaneState): void {

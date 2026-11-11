@@ -6,6 +6,10 @@ Obsidian shows images at their natural resolution, so a 2940px screenshot fills 
 
 ![Obsidian](https://img.shields.io/badge/Obsidian-1.5.1%2B-6C5CE7) ![license](https://img.shields.io/badge/license-MIT-blue)
 
+| Stacked (240px) | 2 per row | 3 per row |
+| :---: | :---: | :---: |
+| <img src="docs/screenshot-stack.png" width="250"> | <img src="docs/screenshot-cols2.png" width="250"> | <img src="docs/screenshot-cols3.png" width="250"> |
+
 ## What it does
 
 Click the image icon in the ribbon (or run **Image size: open image size picker**):
@@ -60,6 +64,10 @@ Alignment is hidden in multi-column mode on purpose: it forces `display: block`,
 | Default layout | stacked | Fallback layout |
 | Folder rules | empty | Added when you pick "this folder"; deletable |
 
+| Stacked (240px) | 2 per row | 3 per row |
+| :---: | :---: | :---: |
+| <img src="docs/screenshot-stack.png" width="250"> | <img src="docs/screenshot-cols2.png" width="250"> | <img src="docs/screenshot-cols3.png" width="250"> |
+
 ## What it does not touch
 
 - **Canvas and Excalidraw** embeds — not `<img>` elements inside a Markdown view.
@@ -107,7 +115,7 @@ npm run lint   # eslint + eslint-plugin-obsidianmd
 
 - Settings rows do not appear in Obsidian 1.13+'s settings search yet (the declarative `getSettingDefinitions()` API is not adopted).
 - Folder rules match by path prefix, not by glob.
-- A max-height above 0 takes priority over the width on tall images.
+- A max-height above 0 takes priority over the width on tall images, and also shrinks cells inside a multi-column layout.
 - Multi-column layouts only regroup images that already share a line; Markdown paragraphs are not merged.
 
 ## License

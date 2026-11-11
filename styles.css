@@ -27,12 +27,16 @@
    source order decides the winner. */
 .isp-layout-cols2 img {
 	width: calc(50% - 11px) !important;
+	/* Without this the pixel cap clamps the percentage straight back down and
+	   three capped images fit on a "two per row" line. */
+	max-width: 100% !important;
 	margin: 5px;
 	vertical-align: top;
 }
 
 .isp-layout-cols3 img {
 	width: calc(33.333% - 9px) !important;
+	max-width: 100% !important;
 	margin: 4px;
 	vertical-align: top;
 }

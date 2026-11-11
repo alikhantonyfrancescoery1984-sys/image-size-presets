@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.2.2
+
+### Fixed
+
+- **"2 per row" rendered as three 240px images.** The pixel cap (`max-width`)
+  still applied in multi-column mode, clamping the 50%/33% widths straight back
+  down. Columns now lift the cap to `100%` and share the row properly: two
+  439px images in a 900px pane, three at 291px.
+- **A pane opened while the metadata cache was unreadable never got styled.**
+  1.2.1 started skipping unready panes to stop the flicker, but nothing ever
+  retried, so those notes kept their inline widths and looked untouched. The
+  plugin now retries (bounded) and also listens to `metadataCache: resolved`.
+
+### Added
+
+- `npm run test:layout` — renders the real `styles.css` in headless Chrome and
+  measures pixel widths: caps, no-upscaling, legacy mode, 2/3 per row, centring.
+- `npm run preview` — writes `docs/screenshot-*.png` from the same harness.
+
 ## 1.2.1
 
 ### Fixed
