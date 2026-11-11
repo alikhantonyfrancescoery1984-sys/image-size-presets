@@ -38,6 +38,10 @@ const scenarios = [
 		force: false,
 		images: IMG(3000, 553, 'c1') + IMG(3000, 209, 'c2'),
 	}),
+	// "No limit": the plugin sets no force class, so the inline width Obsidian's
+	// drag-to-resize writes must be honoured. Two widths prove it follows.
+	pane({ id: 'no-limit-553', width: '100%', force: false, images: IMG(3000, 553, 'h1') }),
+	pane({ id: 'no-limit-320', width: '100%', force: false, images: IMG(3000, 320, 'i1') }),
 	pane({ id: 'align-center', width: '240px', force: true, align: 'center', images: IMG(3000, null, 'f1') }),
 	// A source line break between embeds renders as <br>; the size presets must
 	// still cap both images at the chosen value.
@@ -69,7 +73,7 @@ ${scenarios.join('\n')}
 			return { w: Math.round(r.width), top: Math.round(img.offsetTop), left: Math.round(img.offsetLeft) };
 		});
 	};
-	for (const id of ['stack-240','stack-small','legacy-cap','align-center','br-separated']) {
+	for (const id of ['stack-240','stack-small','legacy-cap','align-center','br-separated','no-limit-553','no-limit-320']) {
 		results.push({ id, images: measure(id) });
 	}
 	document.getElementById('out').textContent = JSON.stringify(results);
@@ -130,6 +134,10 @@ check('stack 240 keeps a 150px image at 150', byId['stack-small'][0].w, 150);
 check('legacy: |553 capped to 240', byId['legacy-cap'][0].w, 240);
 check('legacy: |209 untouched', byId['legacy-cap'][1].w, 209);
 check('align center offsets the image', byId['align-center'][0].left > 100, true);
+// "No limit" must leave the hand-set width alone, otherwise dragging an image
+// inside Obsidian appears to do nothing.
+check('no limit honours |553', byId['no-limit-553'][0].w, 553);
+check('no limit honours |320', byId['no-limit-320'][0].w, 320);
 check('br-separated: first image at 240', byId['br-separated'][0].w, 240);
 check('br-separated: second image at 240', byId['br-separated'][1].w, 240);
 

@@ -322,6 +322,10 @@ export default class ImageSizePresetsPlugin extends Plugin {
 		const el = this.viewFor(path)?.containerEl;
 		if (!el) return;
 		el.style.setProperty('--isp-width', width > 0 ? `${width}px` : '100%');
+		// The force class must follow the cap immediately, otherwise choosing
+		// "no limit" leaves the inline width neutralised for the whole pending
+		// window and dragging still looks broken.
+		el.classList.toggle('isp-force', this.settings.overrideInlineWidth && width > 0);
 		// The DOM no longer matches the cached key; let the next refresh correct it.
 		this.lastState.delete(el);
 	}

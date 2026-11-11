@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.3.2
+
+### Fixed
+
+- **"No limit" made images un-resizable.** The plugin kept neutralising the
+  inline width (`width: auto !important`), and that attribute is exactly what
+  Obsidian's drag-to-resize writes — so dragging did nothing. The override now
+  only applies while a cap is active, and the class is dropped immediately
+  instead of after the next reconcile.
+
+### Tests
+
+- unit: "no limit" resolves `force: false`, and switching from a cap to no cap
+  changes the state key so the pane is repainted.
+- browser: with no cap the hand-set `|553` and `|320` widths render at 553 and
+  320, proving the attribute is honoured again.
+
 ## 1.3.1
 
 ### Fixed

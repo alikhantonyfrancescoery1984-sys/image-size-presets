@@ -42,11 +42,15 @@ export function computePaneState(input: PaneInput): PaneState | null {
 	const resolved = resolveWidth({ frontmatter, folderPath, settings });
 	const align = resolveAlign({ frontmatter, folderPath, settings });
 	const height = Number(settings.defaultHeight);
+	const hasCap = resolved.width > 0;
 
 	return {
-		width: resolved.width > 0 ? `${resolved.width}px` : '100%',
+		width: hasCap ? `${resolved.width}px` : '100%',
 		height: Number.isFinite(height) && height > 0 ? `${height}px` : 'none',
-		force: settings.overrideInlineWidth,
+		// "No limit" must not neutralise the inline width: that attribute is
+		// exactly what Obsidian's drag-to-resize writes, so overriding it makes
+		// dragging look broken. Unifying only makes sense when there is a cap.
+		force: settings.overrideInlineWidth && hasCap,
 		align,
 	};
 }

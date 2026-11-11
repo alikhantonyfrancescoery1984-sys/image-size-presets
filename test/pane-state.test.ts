@@ -62,6 +62,25 @@ test('alignment travels with the state', () => {
 	assert.equal(computePaneState(input())?.align, 'inherit');
 });
 
+test('"no limit" does not override the inline width, so dragging keeps working', () => {
+	// Obsidian's drag-to-resize writes the inline width attribute. While a cap
+	// is applied the plugin wins and dragging looks broken, which is expected;
+	// with no cap the plugin must get out of the way.
+	const noLimit = computePaneState(input({ frontmatter: { 'image-width': 'none' } }));
+	assert.equal(noLimit?.width, '100%');
+	assert.equal(noLimit?.force, false);
+
+	const capped = computePaneState(input({ frontmatter: { 'image-width': 240 } }));
+	assert.equal(capped?.force, true);
+});
+
+test('turning the cap off changes the state key, so the pane is repainted', () => {
+	const capped = computePaneState(input({ frontmatter: { 'image-width': 240 } }));
+	const unlimited = computePaneState(input({ frontmatter: { 'image-width': 'none' } }));
+	assert.ok(capped && unlimited);
+	assert.notEqual(paneStateKey(capped), paneStateKey(unlimited));
+});
+
 test('the override flag travels with the state', () => {
 	assert.equal(computePaneState(input())?.force, true);
 	assert.equal(computePaneState(input({ settings: { ...settings, overrideInlineWidth: false } }))?.force, false);
