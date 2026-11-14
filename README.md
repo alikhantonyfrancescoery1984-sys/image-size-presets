@@ -4,9 +4,44 @@ Set a default image size for **a note**, **a folder**, or **your whole vault** �
 
 Obsidian shows images at their natural resolution, so a 2940px screenshot fills the editor. Dragging the corner of every pasted screenshot gets old fast. This plugin replaces that with six presets and three scopes.
 
-![Obsidian](https://img.shields.io/badge/Obsidian-1.5.1%2B-6C5CE7) ![license](https://img.shields.io/badge/license-MIT-blue)
+![Obsidian](https://img.shields.io/badge/Obsidian-1.5.1%2B-6C5CE7) ![license](https://img.shields.io/badge/license-MIT-blue) ![release](https://img.shields.io/github/v/release/alikhantonyfrancescoery1984-sys/image-size-presets)
+
+**[Install](#install)** · [中文说明](README.zh-CN.md)
 
 <img src="docs/screenshot-stack.png" width="620">
+
+## Install
+
+Not in the community plugin directory yet. Two ways to install:
+
+### BRAT (recommended — updates itself)
+
+1. Install [BRAT](https://github.com/TfTHacker/obsidian42-brat) and enable it.
+2. Open the command palette and run **BRAT: Add a beta plugin for testing**.
+3. Paste `alikhantonyfrancescoery1984-sys/image-size-presets` and confirm.
+4. Enable **Image Size Presets** in **Settings → Community plugins**.
+
+BRAT checks for updates when Obsidian starts, so new versions arrive on their own.
+
+### Manual download
+
+1. Open the [latest release](https://github.com/alikhantonyfrancescoery1984-sys/image-size-presets/releases/latest).
+2. Download `main.js`, `manifest.json` and `styles.css`.
+3. Create `YourVault/.obsidian/plugins/image-size-presets/` and put the three files in it.
+4. Reload Obsidian with `Cmd/Ctrl+R`, then enable the plugin in **Settings → Community plugins**.
+
+Requires Obsidian **1.5.1** or newer. Nothing else needs to be installed.
+
+### From source
+
+```bash
+git clone https://github.com/alikhantonyfrancescoery1984-sys/image-size-presets.git
+cd image-size-presets
+npm install
+npm run build
+cp main.js manifest.json styles.css "/path/to/YourVault/.obsidian/plugins/image-size-presets/"
+```
+
 
 ## What it does
 

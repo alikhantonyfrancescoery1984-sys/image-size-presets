@@ -4,9 +4,44 @@
 
 Obsidian 默认按原始分辨率显示图片，一张 2940px 宽的截图会占满编辑区。每贴一张都拖一次，时间久了很烦。这个插件把这件事变成两次点击。
 
-![Obsidian](https://img.shields.io/badge/Obsidian-1.5.1%2B-6C5CE7) ![license](https://img.shields.io/badge/license-MIT-blue)
+![Obsidian](https://img.shields.io/badge/Obsidian-1.5.1%2B-6C5CE7) ![license](https://img.shields.io/badge/license-MIT-blue) ![release](https://img.shields.io/github/v/release/alikhantonyfrancescoery1984-sys/image-size-presets)
+
+**[安装](#安装)** · [English](README.md)
 
 <img src="docs/screenshot-stack.png" width="620">
+
+## 安装
+
+还没进官方插件目录，有两种装法。
+
+### BRAT（推荐，能自动更新）
+
+1. 安装并启用 [BRAT](https://github.com/TfTHacker/obsidian42-brat)。
+2. 命令面板执行 **BRAT: Add a beta plugin for testing**。
+3. 填入 `alikhantonyfrancescoery1984-sys/image-size-presets`，确认。
+4. 到 **设置 → 第三方插件** 里启用「图片大小预设」。
+
+BRAT 会在 Obsidian 启动时检查更新，以后新版本自动到位。
+
+### 手动下载
+
+1. 打开[最新 Release](https://github.com/alikhantonyfrancescoery1984-sys/image-size-presets/releases/latest)。
+2. 下载 `main.js`、`manifest.json`、`styles.css` 三个文件。
+3. 在 `你的库/.obsidian/plugins/image-size-presets/` 下放进去。
+4. `Cmd/Ctrl+R` 重载 Obsidian，再到 **设置 → 第三方插件** 启用。
+
+需要 Obsidian **1.5.1** 或更新版本，不需要装别的插件。
+
+### 从源码构建
+
+```bash
+git clone https://github.com/alikhantonyfrancescoery1984-sys/image-size-presets.git
+cd image-size-presets
+npm install
+npm run build
+cp main.js manifest.json styles.css "/你的库/.obsidian/plugins/image-size-presets/"
+```
+
 
 ## 怎么用
 
